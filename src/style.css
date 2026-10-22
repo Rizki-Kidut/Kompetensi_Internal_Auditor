@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ───────────────────────────────────────────────── */
+html {
+  font-size: 12px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  margin: 0;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ─── Custom scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #93c5fd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* ─── Fade-in animation ──────────────────────────────────── */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Reusable component layers ──────────────────────────── */
+@layer components {
+  /* Sidebar */
+  .sidebar-nav-active {
+    @apply bg-blue-700 text-white font-medium px-4 py-3 rounded-lg;
+  }
+  .sidebar-nav-inactive {
+    @apply text-blue-200 hover:bg-blue-700 hover:text-white px-4 py-3 rounded-lg transition-colors;
+  }
+  .sidebar-nav-amber-active {
+    @apply bg-amber-600 text-white font-medium px-4 py-3 rounded-lg;
+  }
+  .sidebar-nav-amber-inactive {
+    @apply text-amber-200 hover:bg-amber-600 hover:text-white px-4 py-3 rounded-lg transition-colors;
+  }
+  .sidebar-group-label {
+    @apply text-blue-400 uppercase tracking-wider px-4 mt-4 mb-2;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* Cards */
+  .ct-card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200;
+  }
+
+  /* Table */
+  .ct-table-header {
+    @apply bg-slate-50 text-slate-600 border-b border-slate-200 text-sm shadow-sm sticky top-0 z-10;
+  }
+  .ct-table-row {
+    @apply divide-y divide-slate-100;
+  }
+  .ct-table-row-hover {
+    @apply hover:bg-blue-50/50;
+  }
+
+  /* Action buttons inside table cells */
+  .ct-action-btn {
+    @apply p-1.5 bg-white border border-slate-200 rounded transition shadow-sm;
+  }
+  .ct-action-btn-view {
+    @apply ct-action-btn text-slate-400 hover:text-blue-600;
+  }
+  .ct-action-btn-edit {
+    @apply ct-action-btn text-slate-400 hover:text-amber-600;
+  }
+  .ct-action-btn-success {
+    @apply ct-action-btn text-slate-400 hover:text-emerald-600;
+  }
+  .ct-action-btn-danger {
+    @apply ct-action-btn text-slate-400 hover:text-red-600;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors;
+  }
+  .btn-success {
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors;
+  }
+  .btn-danger-outline {
+    @apply bg-white border border-red-300 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded text-xs font-bold transition-colors;
+  }
+  .btn-submit {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition-colors;
+  }
+
+  /* Badges */
+  .ct-badge {
+    @apply px-2 py-0.5 rounded font-bold uppercase;
+    font-size: 10px;
+  }
+  .ct-badge-blue   { @apply ct-badge bg-blue-100 text-blue-700; }
+  .ct-badge-amber  { @apply ct-badge bg-amber-100 text-amber-700; }
+  .ct-badge-slate  { @apply ct-badge bg-slate-100 text-slate-700; }
+  .ct-badge-emerald { @apply ct-badge bg-emerald-100 text-emerald-700; }
+  .ct-badge-red    { @apply ct-badge bg-red-100 text-red-700; }
+
+  /* Status badge with border (for due-date indicators) */
+  .ct-status-badge {
+    @apply rounded-full px-2.5 py-1 font-bold border;
+    font-size: 11px;
+  }
+  .ct-status-ok      { @apply ct-status-badge bg-emerald-100 text-emerald-700 border-emerald-200; }
+  .ct-status-warn    { @apply ct-status-badge bg-amber-100 text-amber-700 border-amber-200; }
+  .ct-status-danger  { @apply ct-status-badge bg-red-100 text-red-700 border-red-200; }
+
+  /* Form elements */
+  .ct-label {
+    @apply block text-xs font-bold text-slate-600 mb-1;
+  }
+  .ct-input {
+    @apply w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm;
+  }
+
+  /* Empty state */
+  .ct-empty-icon-wrap {
+    @apply w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100;
+  }
+}
