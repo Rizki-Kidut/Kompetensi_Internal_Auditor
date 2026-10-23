@@ -77,6 +77,63 @@ const routes = [
     name: 'HistoryAuditor',
     component: () => import('../modules/auditor-history/views/HistoryAuditor.vue'),
   },
+  // ── LMS: Auditor-facing ──
+  {
+    path: '/lms/kursus',
+    name: 'LmsKursusSaya',
+    component: () => import('../modules/lms/views/KursusSaya.vue'),
+  },
+  {
+    path: '/lms/jadwal',
+    name: 'LmsJadwalSaya',
+    component: () => import('../modules/lms/views/JadwalSaya.vue'),
+  },
+  {
+    path: '/lms/tes',
+    name: 'LmsTesTertulis',
+    component: () => import('../modules/lms/views/TesTertulis.vue'),
+  },
+  {
+    path: '/lms/workshop',
+    name: 'LmsWorkshopSaya',
+    component: () => import('../modules/lms/views/WorkshopSaya.vue'),
+  },
+  {
+    path: '/lms/hasil',
+    name: 'LmsHasilSertifikat',
+    component: () => import('../modules/lms/views/HasilSertifikat.vue'),
+  },
+  // ── LMS: Admin ──
+  {
+    path: '/lms/admin/kursus',
+    name: 'LmsAdminKursusMateri',
+    component: () => import('../modules/lms/views/AdminKursusMateri.vue'),
+  },
+  {
+    path: '/lms/admin/soal',
+    name: 'LmsAdminBankSoal',
+    component: () => import('../modules/lms/views/AdminBankSoal.vue'),
+  },
+  {
+    path: '/lms/admin/tes',
+    name: 'LmsAdminTesTertulis',
+    component: () => import('../modules/lms/views/AdminTesTertulis.vue'),
+  },
+  {
+    path: '/lms/admin/workshop',
+    name: 'LmsAdminWorkshop',
+    component: () => import('../modules/lms/views/AdminWorkshop.vue'),
+  },
+  {
+    path: '/lms/admin/penilaian',
+    name: 'LmsAdminPenilaian',
+    component: () => import('../modules/lms/views/AdminPenilaian.vue'),
+  },
+  {
+    path: '/lms/admin/laporan',
+    name: 'LmsAdminLaporan',
+    component: () => import('../modules/lms/views/AdminLaporan.vue'),
+  },
 ]
 
 const router = createRouter({

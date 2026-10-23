@@ -165,4 +165,159 @@
  * @property {EvaluationStatus} finalStatus
  */
 
+/**
+ * @typedef {'Tatap Muka'|'LMS'|'Blended'} DeliveryMode
+ * @typedef {'Manual'|'LMS'} TestSource
+ */
+
+/**
+ * @typedef {'Draft'|'Published'|'Arsip'} LmsCourseStatus
+ *
+ * @typedef {Object} LmsCourse
+ * @property {string} id
+ * @property {string} title
+ * @property {string} description
+ * @property {string|null} competencyItemId
+ * @property {CompetencyLevel} targetLevel
+ * @property {number} passGrade
+ * @property {LmsCourseStatus} status
+ */
+
+/**
+ * @typedef {Object} LmsModule
+ * @property {string} id
+ * @property {string} courseId
+ * @property {string} title
+ * @property {number} sortOrder
+ * @property {string|null} prerequisiteModuleId
+ */
+
+/**
+ * @typedef {'PDF'|'PPT'|'Video'|'Link'|'Teks'} LmsMaterialType
+ *
+ * @typedef {Object} LmsMaterial
+ * @property {string} id
+ * @property {string} moduleId
+ * @property {string} title
+ * @property {LmsMaterialType} type
+ * @property {string} url
+ * @property {string} content
+ * @property {string} docNumber
+ * @property {string} revision
+ * @property {string} effectiveDate
+ * @property {number} sortOrder
+ */
+
+/**
+ * @typedef {'PG'|'BS'|'Isian'|'Esai'|'Kasus'} LmsQuestionType
+ * @typedef {'Mudah'|'Sedang'|'Sulit'} LmsDifficulty
+ *
+ * @typedef {Object} LmsQuestion
+ * @property {string} id
+ * @property {string} courseId
+ * @property {LmsQuestionType} type
+ * @property {string} text
+ * @property {Array} options
+ * @property {string} clauseTag
+ * @property {LmsDifficulty} difficulty
+ * @property {number} points
+ */
+
+/**
+ * @typedef {Object} LmsQuestionKey
+ * @property {string} questionId
+ * @property {Array} answer
+ * @property {string} explanation
+ */
+
+/**
+ * @typedef {'Draft'|'Published'} LmsTestStatus
+ *
+ * @typedef {Object} LmsTest
+ * @property {string} id
+ * @property {string} courseId
+ * @property {string} title
+ * @property {number} durationMinutes
+ * @property {number} passGrade
+ * @property {number} maxAttempts
+ * @property {boolean} shuffleQuestions
+ * @property {boolean} shuffleOptions
+ * @property {number} openOffsetDays
+ * @property {number} closeOffsetDays
+ * @property {LmsTestStatus} status
+ */
+
+/**
+ * @typedef {Object} LmsTestQuestion
+ * @property {string} testId
+ * @property {string} questionId
+ * @property {number} sortOrder
+ */
+
+/**
+ * @typedef {'Terdaftar'|'Belajar'|'Selesai'} LmsEnrollmentStatus
+ *
+ * @typedef {Object} LmsEnrollment
+ * @property {string} id
+ * @property {string} sessionId
+ * @property {string} courseId
+ * @property {string} auditorId
+ * @property {number} progress
+ * @property {string[]} completedModules
+ * @property {LmsEnrollmentStatus} status
+ */
+
+/**
+ * @typedef {'Berjalan'|'Menunggu Penilaian'|'Dinilai'} LmsAttemptStatus
+ *
+ * @typedef {Object} LmsAttempt
+ * @property {string} id
+ * @property {string} testId
+ * @property {string} sessionId
+ * @property {string} auditorId
+ * @property {number} attemptNo
+ * @property {string|null} startedAt
+ * @property {string|null} submittedAt
+ * @property {Object} answers
+ * @property {number|null} autoScore
+ * @property {number|null} manualScore
+ * @property {number|null} finalScore
+ * @property {boolean} passed
+ * @property {LmsAttemptStatus} status
+ */
+
+/**
+ * @typedef {Object} LmsRubricCriterion
+ * @property {string} criterion
+ * @property {number} weight
+ * @property {number} maxScore
+ *
+ * @typedef {Object} LmsWorkshopTask
+ * @property {string} id
+ * @property {string} sessionId
+ * @property {string} title
+ * @property {string} brief
+ * @property {string} dueDate
+ * @property {LmsRubricCriterion[]} rubric
+ * @property {number} maxScore
+ */
+
+/**
+ * @typedef {'Dikirim'|'Dinilai'} LmsSubmissionStatus
+ *
+ * @typedef {Object} LmsSubmission
+ * @property {string} id
+ * @property {string} taskId
+ * @property {string} sessionId
+ * @property {string} auditorId
+ * @property {string} fileUrl
+ * @property {string} note
+ * @property {string|null} submittedAt
+ * @property {Object} rubricScores
+ * @property {number|null} score
+ * @property {string} feedback
+ * @property {string} assessor
+ * @property {LmsSubmissionStatus} status
+ */
+
 export {}
