@@ -84,6 +84,11 @@ const routes = [
     component: () => import('../modules/lms/views/KursusSaya.vue'),
   },
   {
+    path: '/lms/kursus/:id',
+    name: 'LmsKursusDetail',
+    component: () => import('../modules/lms/views/KursusDetail.vue'),
+  },
+  {
     path: '/lms/jadwal',
     name: 'LmsJadwalSaya',
     component: () => import('../modules/lms/views/JadwalSaya.vue'),
@@ -91,6 +96,11 @@ const routes = [
   {
     path: '/lms/tes',
     name: 'LmsTesTertulis',
+    component: () => import('../modules/lms/views/TesTertulis.vue'),
+  },
+  {
+    path: '/lms/tes/:testId',
+    name: 'LmsTesDetail',
     component: () => import('../modules/lms/views/TesTertulis.vue'),
   },
   {
