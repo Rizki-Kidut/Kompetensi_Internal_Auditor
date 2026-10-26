@@ -53,6 +53,47 @@ export function calcGapAnalysis(auditors, items, matrix) {
 }
 
 /**
+ * LMS score thresholds for level suggestion (adjust as needed).
+ */
+export const LMS_RULES = { testPass: 80, workshopPass: 80, starScore: 90 }
+
+const _LVL_RANK = { '': 0, '●': 2, '◆': 3, '★': 4 }
+
+/**
+ * Suggest a competency level upgrade based on LMS results.
+ *
+ * Rules:
+ * - If test < testPass or workshop < workshopPass → no suggestion ('').
+ * - If both pass → suggest the course target level, but capped at ◆ for a draft.
+ * - Suggest ★ only if test >= starScore AND workshop >= starScore AND avg eval >= 90
+ *   (returned separately so the UI can show it as guidance, not auto-fill).
+ *
+ * @param {{testScore?: number, workshopScore?: number, before?: string, target?: string, avgEval?: number}} input
+ * @returns {{suggested: string, starEligible: boolean}}
+ */
+export function suggestLevelFromLms(input) {
+  const { testScore = 0, workshopScore = 0, before = '', target = '◆', avgEval = 0 } = input
+  const testPass = LMS_RULES.testPass
+  const workshopPass = LMS_RULES.workshopPass
+  const starScore = LMS_RULES.starScore
+
+  const testOk = testScore >= testPass
+  const workshopOk = workshopScore == null || workshopScore >= workshopPass
+
+  if (!testOk || !workshopOk) return { suggested: '', starEligible: false }
+
+  const starEligible = testScore >= starScore && (workshopScore == null || workshopScore >= starScore) && avgEval >= 90
+
+  // Cap at ◆ for draft; ★ only as guidance
+  let suggested = target === '★' ? '◆' : target
+
+  // Don't suggest lower or equal to current
+  if (_LVL_RANK[before] >= _LVL_RANK[suggested]) suggested = ''
+
+  return { suggested, starEligible }
+}
+
+/**
  * Build approval chain based on auditor position.
  * @param {string} position
  * @returns {import('../types/models').ApprovalStep[]}

@@ -54,6 +54,12 @@ export const useLmsWorkshopStore = defineStore('lmsWorkshop', () => {
     if (error) { console.error('[lmsWorkshopStore] updateSubmission error:', error.message); return }
     const idx = submissions.value.findIndex(s => s.id === updated.id)
     if (idx !== -1) submissions.value[idx] = updated
+    // Auto-create draft evaluation when workshop is graded
+    if (updated.status === 'Dinilai') {
+      await supabase.rpc('lms_create_draft_evaluation', {
+        p_session_id: updated.sessionId, p_auditor_id: updated.auditorId,
+      })
+    }
   }
 
   function tasksBySession(sessionId) {

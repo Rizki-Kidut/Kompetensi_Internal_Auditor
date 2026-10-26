@@ -36,6 +36,17 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     if (idx !== -1) evaluations.value[idx] = updated
   }
 
+  async function createDraftEvaluation(sessionId, auditorId) {
+    const { data, error } = await supabase.rpc('lms_create_draft_evaluation', {
+      p_session_id: sessionId, p_auditor_id: auditorId,
+    })
+    if (error) { console.error('[evaluationStore] createDraftEvaluation error:', error.message); return null }
+    if (data?.success) {
+      await load()
+    }
+    return data
+  }
+
   async function approveStep(evalId, role, approverName, note = '') {
     const ev = evaluations.value.find(e => e.id === evalId)
     if (!ev) return
@@ -68,5 +79,5 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     return ev
   }
 
-  return { evaluations, loading, load, addEvaluation, updateEvaluation, approveStep, declineStep }
+  return { evaluations, loading, load, addEvaluation, updateEvaluation, createDraftEvaluation, approveStep, declineStep }
 })

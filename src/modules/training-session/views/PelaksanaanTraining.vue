@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PlayCircle, CheckSquare, Users, Eye, ArrowRight } from '@lucide/vue'
+import { PlayCircle, CheckSquare, Users, Eye, ArrowRight, Monitor, Video, Link as LinkIcon } from '@lucide/vue'
 import { useAuditorStore }         from '../../../stores/auditorStore.js'
 import { useTrainingSessionStore } from '../../../stores/trainingSessionStore.js'
 import { useTrainingPlanStore }    from '../../../stores/trainingPlanStore.js'
 import { useCompetencyStore }      from '../../../stores/competencyStore.js'
+import { useLmsCourseStore }       from '../../../stores/lmsCourseStore.js'
+import { useLmsEnrollmentStore }   from '../../../stores/lmsEnrollmentStore.js'
+import { useLmsWorkshopStore }     from '../../../stores/lmsWorkshopStore.js'
 import { useToast }                from '../../../shared/composables/useToast.js'
 import BaseModal  from '../../../shared/components/BaseModal.vue'
 import BaseButton from '../../../shared/components/BaseButton.vue'
@@ -13,17 +16,25 @@ import StatusBadge from '../../../shared/components/StatusBadge.vue'
 
 const route   = useRoute()
 const router  = useRouter()
-const auditorStore  = useAuditorStore()
-const sessionStore  = useTrainingSessionStore()
-const planStore     = useTrainingPlanStore()
-const competency    = useCompetencyStore()
+const auditorStore    = useAuditorStore()
+const sessionStore    = useTrainingSessionStore()
+const planStore       = useTrainingPlanStore()
+const competency      = useCompetencyStore()
+const lmsCourseStore  = useLmsCourseStore()
+const lmsEnrollStore  = useLmsEnrollmentStore()
+const lmsWorkshopStore = useLmsWorkshopStore()
 const toast   = useToast()
+
+const publishedCourses = computed(() => lmsCourseStore.courses.filter(c => c.status === 'Published'))
 
 onMounted(() => {
   auditorStore.load()
   sessionStore.load()
   planStore.load()
   competency.load()
+  lmsCourseStore.load()
+  lmsEnrollStore.load()
+  lmsWorkshopStore.load()
   // If navigated from PerencanaanTraining with planId, open create modal
   if (route.query.planId) {
     const plan = planStore.plans.find(p => p.id === route.query.planId)
@@ -70,6 +81,8 @@ function emptyCreateForm() {
     planId: '', trainingName: '', date: '',
     organizer: '', trainer: '', materials: '',
     participants: [],
+    deliveryMode: 'Tatap Muka',
+    lmsCourseId: '',
   }
 }
 const createForm = ref(emptyCreateForm())
@@ -109,10 +122,12 @@ function validateCreate() {
   if (!createForm.value.date)               e.date = 'Tanggal wajib diisi'
   if (!createForm.value.trainer.trim())     e.trainer = 'Trainer wajib diisi'
   if (!createForm.value.participants.length) e.participants = 'Pilih minimal 1 peserta'
+  if (createForm.value.deliveryMode !== 'Tatap Muka' && !createForm.value.lmsCourseId)
+    e.lmsCourseId = 'Kursus LMS wajib untuk metode LMS/Blended'
   return e
 }
 
-function submitCreate() {
+async function submitCreate() {
   createError.value = validateCreate()
   if (Object.keys(createError.value).length) return
 
@@ -129,8 +144,14 @@ function submitCreate() {
       participants: [...createForm.value.participants],
       attendees: [...createForm.value.participants], // default all present
       status: 'Terjadwal',
+      deliveryMode: createForm.value.deliveryMode,
+      lmsCourseId: createForm.value.deliveryMode !== 'Tatap Muka' ? createForm.value.lmsCourseId : null,
     }
-    sessionStore.addSession(session)
+    await sessionStore.addSession(session)
+    // Sync LMS enrollments for participants
+    if (session.lmsCourseId) {
+      await lmsEnrollStore.syncEnrollments(session.id, session.lmsCourseId, session.participants)
+    }
     toast.success(`Sesi training "${session.trainingName}" berhasil dibuat.`)
     createOpen.value = false
   } finally {
@@ -191,6 +212,26 @@ function goToEvaluation(session) {
 function attendedCount(session) {
   return (session.attendees ?? session.participants ?? []).length
 }
+
+// Auto-fill attendees from LMS progress (100% course progress or submitted workshop)
+function lmsProgressPercent(auditorId, sessionId) {
+  const en = lmsEnrollStore.enrollmentsBySession(sessionId).find(e => e.auditorId === auditorId)
+  return en ? en.progress : 0
+}
+function hasWorkshopSubmission(auditorId, sessionId) {
+  return lmsWorkshopStore.submissions.some(s => s.auditorId === auditorId && s.sessionId === sessionId)
+}
+function autoFillFromLms() {
+  const sid = detailSession.value.id
+  const participants = detailSession.value.participants ?? []
+  localAttendees.value = participants.filter(pid =>
+    lmsProgressPercent(pid, sid) >= 100 || hasWorkshopSubmission(pid, sid)
+  )
+  toast.info('Kehadiran diisi otomatis dari progres LMS.')
+}
+const isLmsSession = computed(() =>
+  detailSession.value && detailSession.value.deliveryMode && detailSession.value.deliveryMode !== 'Tatap Muka'
+)
 </script>
 
 <template>
@@ -266,6 +307,21 @@ function attendedCount(session) {
                 <p v-if="s.planId" class="text-slate-400 text-xs mt-0.5">
                   Dari rencana: {{ planItemName(s.planId) || s.planId }}
                 </p>
+                <div v-if="s.deliveryMode && s.deliveryMode !== 'Tatap Muka'" class="flex items-center gap-1.5 mt-1">
+                  <span
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                    :class="s.deliveryMode === 'LMS' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'"
+                  >
+                    <Monitor class="w-2.5 h-2.5" />{{ s.deliveryMode }}
+                  </span>
+                  <router-link
+                    v-if="s.lmsCourseId"
+                    :to="{ name: 'KursusDetail', params: { id: s.lmsCourseId } }"
+                    class="text-[10px] text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5"
+                  >
+                    <LinkIcon class="w-2.5 h-2.5" /> Buka Kursus
+                  </router-link>
+                </div>
               </td>
               <td class="px-4 py-3 text-slate-600">{{ s.date }}</td>
               <td class="px-4 py-3 text-slate-600">{{ s.trainer }}</td>
@@ -354,6 +410,35 @@ function attendedCount(session) {
           </div>
         </div>
 
+        <!-- Delivery Mode + LMS Course -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="ct-label">Metode Pelaksanaan <span class="text-red-500">*</span></label>
+            <select v-model="createForm.deliveryMode" class="ct-input">
+              <option value="Tatap Muka">Tatap Muka</option>
+              <option value="LMS">LMS</option>
+              <option value="Blended">Blended</option>
+            </select>
+          </div>
+          <div>
+            <label class="ct-label">
+              Kursus LMS
+              <span v-if="createForm.deliveryMode !== 'Tatap Muka'" class="text-red-500">*</span>
+            </label>
+            <select
+              v-model="createForm.lmsCourseId"
+              class="ct-input"
+              :class="createError.lmsCourseId ? 'border-red-400' : ''"
+              :disabled="createForm.deliveryMode === 'Tatap Muka'"
+            >
+              <option value="">-- Pilih kursus --</option>
+              <option v-for="c in publishedCourses" :key="c.id" :value="c.id">{{ c.title }}</option>
+            </select>
+            <p v-if="createError.lmsCourseId" class="text-red-500 text-xs mt-1">{{ createError.lmsCourseId }}</p>
+            <p v-if="createForm.deliveryMode === 'Tatap Muka'" class="text-slate-400 text-xs mt-1">Tidak wajib untuk Tatap Muka</p>
+          </div>
+        </div>
+
         <!-- Participants -->
         <div>
           <label class="ct-label">Peserta <span class="text-red-500">*</span></label>
@@ -402,6 +487,15 @@ function attendedCount(session) {
             <p class="ct-label">Rencana Training</p>
             <p class="font-medium text-slate-700">{{ planItemName(detailSession.planId) }}</p>
           </div>
+          <div v-if="detailSession.deliveryMode && detailSession.deliveryMode !== 'Tatap Muka'">
+            <p class="ct-label">Metode</p>
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
+              :class="detailSession.deliveryMode === 'LMS' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'"
+            >
+              <Monitor class="w-3 h-3" />{{ detailSession.deliveryMode }}
+            </span>
+          </div>
           <div>
             <p class="ct-label">Status</p>
             <StatusBadge :status="detailSession.status" />
@@ -442,7 +536,14 @@ function attendedCount(session) {
             </div>
           </div>
           <!-- Save attendance button (for non-completed sessions) -->
-          <div v-if="detailSession.status !== 'Selesai' && detailSession.status !== 'Dibatalkan'" class="mt-2 flex justify-end">
+          <div v-if="detailSession.status !== 'Selesai' && detailSession.status !== 'Dibatalkan'" class="mt-2 flex items-center justify-end gap-2">
+            <button
+              v-if="isLmsSession"
+              class="btn-secondary text-xs flex items-center gap-1"
+              @click="autoFillFromLms"
+            >
+              <Monitor class="w-3.5 h-3.5" /> Isi dari Progres LMS
+            </button>
             <button class="btn-secondary text-xs flex items-center gap-1" @click="saveAttendance">
               <CheckSquare class="w-3.5 h-3.5" /> Simpan Kehadiran
             </button>

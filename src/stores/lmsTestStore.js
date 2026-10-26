@@ -112,6 +112,16 @@ export const useLmsTestStore = defineStore('lmsTest', () => {
       p_attempt_id: attemptId, p_answers: answers,
     })
     if (error) { console.error('[lmsTestStore] submitAttempt error:', error.message); return null }
+    // Auto-create draft evaluation if test passed and no manual grading needed
+    if (data?.passed && !data?.has_manual) {
+      // Load the attempt to get session + auditor
+      const { data: att } = await supabase.from('lms_attempts').select('*').eq('id', attemptId).maybeSingle()
+      if (att) {
+        await supabase.rpc('lms_create_draft_evaluation', {
+          p_session_id: att.session_id, p_auditor_id: att.auditor_id,
+        })
+      }
+    }
     return data
   }
 

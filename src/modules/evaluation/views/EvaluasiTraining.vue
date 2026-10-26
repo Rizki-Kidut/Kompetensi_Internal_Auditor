@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ClipboardCheck, Plus, X, Eye, Send, Trash2 } from '@lucide/vue'
+import { ClipboardCheck, Plus, X, Eye, Send, Trash2, Monitor } from '@lucide/vue'
 import { useAuditorStore }         from '../../../stores/auditorStore.js'
 import { useEvaluationStore }      from '../../../stores/evaluationStore.js'
 import { useTrainingSessionStore } from '../../../stores/trainingSessionStore.js'
@@ -12,6 +12,7 @@ import {
   buildApprovalChain,
   calcRataRataNilaiA,
   classifyNilai,
+  suggestLevelFromLms,
 } from '../../../services/calculationService.js'
 import BaseModal            from '../../../shared/components/BaseModal.vue'
 import BaseButton           from '../../../shared/components/BaseButton.vue'
@@ -120,8 +121,11 @@ function emptyForm() {
     },
     scoresKhusus: [],
     hasilTesTertulis: null,
-    skillMapUpdate: { competencyItemId: '', before: '', after: '' },
+    skillMapUpdate: { competencyItemId: '', before: '', after: '', target: '' },
     kesimpulan: '',
+    testSource: 'Manual',
+    testAttemptId: null,
+    workshopScore: null,
   }
 }
 const form = ref(emptyForm())
@@ -163,6 +167,30 @@ const afterLevels = computed(() => {
   return LEVELS_UP.filter(l => LEVEL_RANK[l] > rank)
 })
 
+const isLmsSourced = computed(() => form.value.testSource === 'LMS')
+
+const lmsSuggestion = computed(() => {
+  if (!isLmsSourced.value) return null
+  const r = suggestLevelFromLms({
+    testScore: Number(form.value.hasilTesTertulis) || 0,
+    workshopScore: form.value.workshopScore,
+    before: form.value.skillMapUpdate.before,
+    target: form.value.skillMapUpdate.target || '◆',
+    avgEval: calcAvg.value,
+  })
+  if (!r.suggested) return null
+  return {
+    suggestedLevel: r.suggested,
+    starEligible: r.starEligible,
+    note: r.starEligible ? 'memenuhi syarat ★ (perlu approval khusus)' : '',
+  }
+})
+
+function switchToManual() {
+  form.value.testSource = 'Manual'
+  form.value.testAttemptId = null
+}
+
 function openCreate(sessionId = '', auditorId = '') {
   editingId.value = null
   form.value = { ...emptyForm(), sessionId: sessionId || filterSessionId.value || '', auditorId }
@@ -176,8 +204,11 @@ function openEdit(ev) {
     scoresUmum: { ...ev.scoresUmum },
     scoresKhusus: ev.scoresKhusus ? ev.scoresKhusus.map(k => ({ ...k })) : [],
     hasilTesTertulis: ev.hasilTesTertulis,
-    skillMapUpdate: { ...(ev.skillMapUpdate ?? { competencyItemId: '', before: '', after: '' }) },
+    skillMapUpdate: { ...(ev.skillMapUpdate ?? { competencyItemId: '', before: '', after: '', target: '' }) },
     kesimpulan: ev.kesimpulan ?? '',
+    testSource: ev.testSource ?? 'Manual',
+    testAttemptId: ev.testAttemptId ?? null,
+    workshopScore: ev.workshopScore ?? null,
   }
   formErrors.value = {}
   formOpen.value = true
@@ -221,6 +252,9 @@ function buildRecord(submitMode) {
     kesimpulan: form.value.kesimpulan.trim(),
     approvalChain: submitMode ? buildApprovalChain() : (existing?.approvalChain ?? []),
     finalStatus: submitMode ? 'Menunggu Approval' : (existing?.finalStatus ?? 'Draft'),
+    testSource: form.value.testSource,
+    testAttemptId: form.value.testAttemptId,
+    workshopScore: form.value.workshopScore,
   }
 }
 
@@ -512,7 +546,50 @@ function classColor(cls) {
         <!-- [4] Tes Tertulis -->
         <div>
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Tes Tertulis</h3>
-          <div class="flex items-center gap-3">
+
+          <!-- LMS-sourced: read-only with badge -->
+          <div v-if="isLmsSourced" class="space-y-2">
+            <div class="flex items-center gap-3">
+              <div class="w-24 text-center">
+                <p class="text-2xl font-bold" :class="Number(form.hasilTesTertulis) >= 80 ? 'text-emerald-600' : 'text-amber-600'">
+                  {{ form.hasilTesTertulis }}
+                </p>
+                <p class="text-slate-400 text-xs">/100</p>
+              </div>
+              <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  :class="['h-full rounded-full', scoreBarClass(form.hasilTesTertulis)]"
+                  :style="`width: ${Math.min(Number(form.hasilTesTertulis) || 0, 100)}%`"
+                />
+              </div>
+              <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700">
+                <Monitor class="w-3 h-3" /> Dari LMS
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <router-link
+                v-if="form.testAttemptId"
+                :to="{ name: 'AdminPenilaian' }"
+                class="text-xs text-blue-600 hover:text-blue-800"
+              >
+                Lihat percobaan
+              </router-link>
+              <button class="btn-secondary text-xs px-2 py-1" @click="switchToManual">
+                Ubah manual
+              </button>
+            </div>
+            <div v-if="form.workshopScore != null" class="flex items-center gap-2 text-sm">
+              <span class="text-slate-500">Nilai Workshop:</span>
+              <span class="font-bold" :class="Number(form.workshopScore) >= 80 ? 'text-emerald-600' : 'text-amber-600'">
+                {{ Number(form.workshopScore).toFixed(1) }}
+              </span>
+              <span class="text-slate-400">/100</span>
+              <span class="text-xs text-slate-400 italic">(dari LMS, read-only)</span>
+            </div>
+          </div>
+
+          <!-- Manual: editable -->
+          <div v-else class="flex items-center gap-3">
             <input
               v-model.number="form.hasilTesTertulis"
               type="number" min="0" max="100"
@@ -590,6 +667,26 @@ function classColor(cls) {
                   </button>
                   <span v-if="!afterLevels.length" class="text-slate-400 text-xs italic">Sudah level tertinggi</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- LMS level suggestion chip -->
+            <div v-if="lmsSuggestion && form.skillMapUpdate.competencyItemId" class="md:col-span-2">
+              <div class="flex items-center gap-2 p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+                <Monitor class="w-4 h-4 text-blue-500 shrink-0" />
+                <p class="text-xs text-slate-600">
+                  <span class="font-semibold text-blue-700">Usulan LMS:</span>
+                  naik ke level
+                  <span class="font-bold text-blue-700">{{ lmsSuggestion.suggestedLevel }}</span>
+                  <span v-if="lmsSuggestion.note" class="text-slate-500"> — {{ lmsSuggestion.note }}</span>
+                </p>
+                <button
+                  v-if="afterLevels.includes(lmsSuggestion.suggestedLevel)"
+                  class="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  @click="form.skillMapUpdate.after = lmsSuggestion.suggestedLevel"
+                >
+                  Terapkan
+                </button>
               </div>
             </div>
           </div>
