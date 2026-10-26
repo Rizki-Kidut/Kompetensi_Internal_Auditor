@@ -1,5 +1,19 @@
-# Vue 3 + TypeScript + Vite
+# CertiTrack — Kompetensi, Training, dan LMS Internal Auditor
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Aplikasi internal untuk mengelola kompetensi, training, evaluasi, dan pembelajaran (LMS) Internal Auditor sesuai ISO 9001 / IATF 16949.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+**Stack:** Vue 3, Vite, Tailwind CSS 3, Pinia, vue-router, Supabase (Postgres + RLS + RPC), jsPDF, SheetJS (xlsx).
+
+## Menjalankan
+```
+npm ci
+cp .env.example .env     # isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY
+npm run dev
+npm run build
+```
+Terapkan semua file di `supabase/migrations/` secara berurutan ke proyek Supabase.
+
+## Dokumentasi
+- `PROJECT.md` — tujuan, peran, alur, status
+- `AGENTS.md` — aturan kerja untuk agen AI (Codex)
+- `docs/` — arsitektur, database, desain, spesifikasi LMS, keamanan, backlog, pengujian
