@@ -24,11 +24,11 @@ Prioritas: **P0** = kebenaran nilai dan keamanan, **P1** = celah fungsi dan keta
 - **Catatan:** ini guard tampilan sementara; keamanan sebenarnya ada di P1-1.
 - **Selesai bila:** skenario S10 lulus.
 
-### P0-4 Kebersihan migrasi
-- **Masalah:** nama file berlapis dan berakhiran ganda (`..._20261022090112_lms_module_foundation.sql.sql`, dan dua migrasi 2026-10-26 yang juga bernama ganda); pengecekan `information_schema.columns` tanpa `table_schema`; data contoh tertanam di migrasi fondasi (termasuk `competency_items` bila tabel kosong); kolom di `..._add_lms_fields_to_training_evaluations` duplikat dengan migrasi fondasi (aman karena `IF NOT EXISTS`).
-- **Target:** pindahkan seed ke `supabase/seed/lms_sample.sql`; tambahkan `table_schema = 'public'` pada pengecekan kolom lewat migrasi pembaruan, bukan edit migrasi lama.
-- **Butuh keputusan:** mengganti nama file migrasi **hanya** bila belum pernah diterapkan ke database mana pun (cek `supabase_migrations.schema_migrations`). Bila sudah diterapkan, biarkan nama lama dan catat di `DATABASE.md`.
-- **Selesai bila:** database kosong + semua migrasi menghasilkan skema yang sama tanpa data contoh; seed bisa dijalankan terpisah.
+### P0-4 Kebersihan migrasi dan data contoh (revisi: database sudah berjalan)
+- **Masalah:** nama file migrasi berlapis dan berakhiran ganda (`..._20261022090112_lms_module_foundation.sql.sql`, dan dua migrasi 2026-10-26 yang juga bernama ganda); data contoh tertanam di migrasi fondasi (termasuk `competency_items` bila tabel kosong).
+- **Aturan:** migrasi lama sudah diterapkan ke Supabase. Jangan mengganti nama atau mengedit file migrasi lama.
+- **Target:** buat `supabase/maintenance/remove_lms_sample_data.sql` (bukan migrasi) untuk dijalankan manual sebelum produksi: hapus hanya baris contoh yang ID-nya dibuat di migrasi fondasi (turunkan daftar ID dengan membaca migrasi itu); bungkus dalam transaksi; tampilkan jumlah baris sebelum dan sesudah; hapus competency_items `ci-lms-seed-01` hanya jika tidak dirujuk `competency_cells`, `training_plans`, atau `lms_courses` lain. Catat di `docs/DATABASE.md` nama file yang berlapis dan perilaku seed, tanpa mengubah file aslinya.
+- **Selesai bila:** skrip dapat dibaca dan aman (tidak menyentuh data non-contoh), dan `DATABASE.md` memuatnya.
 
 ### P0-5 Storage: bucket, upload materi, akses privat
 - **Masalah:** `WorkshopSaya.vue` mengunggah ke bucket `lms-submissions` dan memakai `getPublicUrl`, tetapi tidak ada migrasi yang membuat bucket. `AdminKursusMateri.vue` hanya menerima URL; upload file materi ke `lms-materials` (bagian dari rancangan) belum ada.

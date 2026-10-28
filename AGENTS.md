@@ -1,4 +1,4 @@
-# AGENTS.md — Panduan untuk Codex dan agen AI
+# AGENTS.md — Panduan untuk agen AI (Abacus AI Agent, Codex, dan sejenisnya)
 
 Baca file ini sebelum mengubah apa pun. Konteks bisnis ada di `PROJECT.md`; detail teknis ada di folder `docs/`.
 
@@ -33,6 +33,22 @@ supabase/migrations/*.sql              Skema dan RPC
 4. **Migrasi bersifat aditif.** Jangan mengedit file migrasi yang sudah diterapkan; buat file baru. Gunakan `IF NOT EXISTS` / pengecekan `information_schema` dengan `table_schema = 'public'`.
 5. **Jangan hardcode warna hex.** Pakai kelas Tailwind dan class di `src/style.css` (lihat `docs/DESIGN_SYSTEM.md`).
 6. **Jangan mengubah perilaku modul lama** (Matrix, Perencanaan, Approval, dst.) kecuali tugasnya memintanya. Perubahan di file lama harus minimal.
+
+## Database Supabase yang sudah berjalan
+- Semua migrasi yang ada (sampai `20261026035710`) sudah diterapkan ke project Supabase yang aktif. Jangan edit, hapus, atau ganti nama. Perubahan database hanya lewat file migrasi BARU dengan timestamp lebih besar.
+- **Jangan pernah MENULIS ke database/project Supabase:** tidak ada DDL/DML, `apply_migration`, deploy edge function, `supabase db push`, `supabase db reset`, `supabase link`, `supabase login`, `psql`, atau `curl`/skrip tulis ke URL Supabase, dan jangan memakai service-role key. Agen berjalan dengan kredensial pemilik (lokal maupun lewat konektor), jadi batas ini harus dipatuhi secara sadar. Tulis SQL, skrip verifikasi, dan skrip rollback; pemilik yang menjalankannya.
+- **Boleh MEMBACA** lewat Supabase MCP hanya bila MCP berada dalam mode read-only dan terbatas ke satu project: pakai `SELECT` pada `information_schema`/`pg_catalog` (kolom, policy RLS, isi fungsi, grant) untuk memverifikasi kondisi nyata sebelum menulis migrasi. Jika MCP ternyata bisa menulis, berhenti dan beri tahu pemilik. Jangan mengambil isi tabel data pribadi (mis. daftar auditor lengkap) kecuali dibutuhkan, dan jangan menempelkannya ke dokumen.
+- Jangan membaca atau mencetak isi `.env`; cukup rujuk nama variabelnya.
+- Migrasi harus idempotent (`CREATE OR REPLACE`, `IF NOT EXISTS`, `DROP POLICY IF EXISTS`) dan tidak boleh menghapus data.
+- Urutan aman untuk perubahan yang bisa memutus aplikasi: migrasi aditif -> deploy frontend -> migrasi pengunci (REVOKE/RLS), masing-masing file terpisah dengan komentar peringatan di baris pertama.
+- Setiap sesi yang menyentuh database mengakhiri jawaban dengan: nama file migrasi, urutan menjalankan, SQL verifikasi, SQL rollback, dan hal yang belum bisa diuji.
+
+## Batas keselamatan agen lokal
+- Bekerja di branch baru (`agent/<id-backlog>`) dari `main` terbaru. Push **hanya** ke branch `agent/*` itu; jangan push ke `main`/`master`, jangan merge, rebase, force push, atau mengubah remote. Akhiri dengan memberi tahu pemilik untuk membuat pull request.
+- Jangan menjalankan perintah destruktif (`rm -rf` di luar folder build, `git reset --hard`, `git clean`) kecuali diminta eksplisit.
+- Jangan menginstal paket global atau mengubah konfigurasi di luar folder repo.
+- Perintah panjang seperti `npm ci` dapat melewati batas waktu tool (bawaan Abacus 120 detik). Bila terpotong, minta pemilik menjalankannya manual atau menaikkan batas waktu; jangan mengulang tanpa henti.
+- Bila tugas membutuhkan keputusan yang tidak tercantum di dokumen, berhenti dan tanyakan.
 
 ## Konvensi kode
 - Komponen Vue memakai `<script setup>`. Store, service, dan composable ditulis `.js` dengan JSDoc; typedef baru ditambahkan ke `src/types/models.js`.

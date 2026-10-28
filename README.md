@@ -15,5 +15,6 @@ Terapkan semua file di `supabase/migrations/` secara berurutan ke proyek Supabas
 
 ## Dokumentasi
 - `PROJECT.md` — tujuan, peran, alur, status
-- `AGENTS.md` — aturan kerja untuk agen AI (Codex)
+- `AGENTS.md` — aturan kerja untuk agen AI (Abacus AI Agent, Codex, dll.)
 - `docs/` — arsitektur, database, desain, spesifikasi LMS, keamanan, backlog, pengujian
+- `scripts/context-pack.sh` — kumpulkan konteks minimal per item backlog untuk ditempel ke chat AI (hemat kredit)

@@ -42,5 +42,5 @@ Semua tabel (lama dan LMS) memakai policy `TO anon, authenticated USING (true)` 
 ## Konvensi
 - ID bertipe TEXT; kolom fleksibel JSONB; nama kolom snake_case.
 - Migrasi aditif dan idempotent. Cek kolom lewat `information_schema.columns` harus menyertakan `table_schema = 'public'`.
-- Data contoh (kursus "Contoh: Audit Proses Produksi", `ci-lms-seed-01`, dst.) saat ini ada di dalam migrasi fondasi; pindahkan ke `supabase/seed/` (P0-4).
+- Data contoh (kursus "Contoh: ...", ID berpola `*-seed-*`, `ci-lms-seed-01`) dibuat di dalam migrasi fondasi yang sudah diterapkan. Jangan mengedit migrasi itu; pembersihan dilakukan manual lewat `supabase/maintenance/remove_lms_sample_data.sql` (P0-4).
 - Index sudah ada untuk kolom relasi utama LMS; tambahkan bila menambah query baru yang berat.
