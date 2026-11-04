@@ -27,7 +27,7 @@ const toast = useToast()
 const selectedAuditorId = ref('')
 const activeAuditorId = computed(() => isAuditor.value && auditorId.value ? auditorId.value : selectedAuditorId.value)
 
-const testId = computed(() => route.currentRoute.value.params.testId)
+const testId = computed(() => route.params.testId)
 
 onMounted(() => {
   testStore.load(); courseStore.load(); enrollmentStore.load(); sessionStore.load()
