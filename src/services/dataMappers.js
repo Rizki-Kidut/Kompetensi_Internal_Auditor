@@ -367,6 +367,7 @@ export function lmsTestRowToFrontend(row) {
   return {
     id: row.id,
     courseId: row.course_id,
+    moduleId: row.module_id ?? null,
     title: row.title,
     durationMinutes: row.duration_minutes ?? 30,
     passGrade: Number(row.pass_grade) ?? 80,
@@ -383,6 +384,7 @@ export function lmsTestFrontendToRow(test) {
   return {
     id: test.id,
     course_id: test.courseId,
+    module_id: test.moduleId ?? null,
     title: test.title,
     duration_minutes: test.durationMinutes,
     pass_grade: test.passGrade,

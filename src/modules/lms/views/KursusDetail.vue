@@ -42,16 +42,36 @@ const enrollment = computed(() =>
     : null
 )
 
-const completedModules = computed(() => enrollment.value?.completedModules ?? [])
+const courseTests = computed(() => tests.value.filter(t => !t.moduleId))
+const quizByModule = computed(() => Object.fromEntries(tests.value.filter(t => t.moduleId).map(t => [t.moduleId, t])))
+const passedTestIds = computed(() => new Set(
+  enrollmentStore.attempts
+    .filter(a => a.auditorId === activeAuditorId.value && a.passed)
+    .map(a => a.testId)
+))
+
+const completedModules = computed(() => {
+  const done = new Set(enrollment.value?.completedModules ?? [])
+  for (const m of modules.value) {
+    const quiz = quizByModule.value[m.id]
+    if (quiz && passedTestIds.value.has(quiz.id)) done.add(m.id)
+  }
+  return [...done]
+})
 
 const modulesWithStatus = computed(() =>
   modules.value.map((m, idx) => {
     const isComplete = completedModules.value.includes(m.id)
-    const prevModule = idx > 0 ? modules.value[idx - 1] : null
-    const prevComplete = !prevModule || completedModules.value.includes(prevModule.id) || !m.prerequisiteModuleId
-    const prereqMet = !m.prerequisiteModuleId || completedModules.value.includes(m.prerequisiteModuleId)
-    const isLocked = !isComplete && !prereqMet
-    return { ...m, isComplete, isLocked, canAccess: !isLocked }
+    const isLocked = idx > 0 && !completedModules.value.includes(modules.value[idx - 1].id)
+    const quiz = quizByModule.value[m.id] ?? null
+    return {
+      ...m,
+      isComplete,
+      isLocked,
+      canAccess: !isLocked,
+      quiz,
+      quizPassed: !!quiz && passedTestIds.value.has(quiz.id),
+    }
   })
 )
 
@@ -62,7 +82,7 @@ const activeMaterials = computed(() =>
 const activeMaterial = computed(() => activeMaterials.value[activeMaterialIdx.value] ?? null)
 
 function selectModule(m) {
-  if (m.isLocked) { toast.error('Selesaikan modul prasyarat terlebih dahulu.'); return }
+  if (m.isLocked) { toast.error('Selesaikan modul sebelumnya dan kuisnya terlebih dahulu.'); return }
   activeModuleId.value = m.id
   activeMaterialIdx.value = 0
 }
@@ -85,13 +105,17 @@ const allModulesComplete = computed(() =>
 )
 
 function goToTest() {
-  if (!tests.value.length) return
-  router.push(`/lms/tes/${tests.value[0].id}`)
+  if (!courseTests.value.length) return
+  router.push(`/lms/tes/${courseTests.value[0].id}`)
+}
+
+function goToQuiz(testId) {
+  router.push(`/lms/tes/${testId}`)
 }
 
 watch(modules, (mods) => {
   if (mods.length && !activeModuleId.value) {
-    const first = modulesWithStatus.value.find(m => m.canAccess)
+    const first = modulesWithStatus.value.find(m => m.canAccess && !m.isComplete) ?? modulesWithStatus.value.find(m => m.canAccess)
     if (first) {
       activeModuleId.value = first.id
       activeMaterialIdx.value = 0
@@ -156,7 +180,7 @@ watch(modules, (mods) => {
           </div>
 
           <!-- Test button -->
-          <div v-if="allModulesComplete && tests.length" class="mt-4">
+          <div v-if="allModulesComplete && courseTests.length" class="mt-4">
             <BaseButton variant="primary" class="w-full" @click="goToTest">
               <ClipboardCheck class="w-4 h-4" /> Mulai Tes
             </BaseButton>
@@ -243,6 +267,19 @@ watch(modules, (mods) => {
               <p class="text-slate-400 text-sm italic">Belum ada materi di modul ini.</p>
             </div>
 
+            <!-- Module quiz -->
+            <div v-if="activeModule.quiz" class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-slate-700 truncate">Kuis: {{ activeModule.quiz.title }}</p>
+                <p class="text-xs mt-0.5" :class="activeModule.quizPassed ? 'text-emerald-600' : 'text-amber-600'">
+                  {{ activeModule.quizPassed ? 'Sudah lulus. Modul berikutnya sudah terbuka.' : 'Lulus kuis ini untuk menyelesaikan modul dan membuka modul berikutnya.' }}
+                </p>
+              </div>
+              <BaseButton v-if="!activeModule.quizPassed" variant="primary" size="sm" @click="goToQuiz(activeModule.quiz.id)">
+                <ClipboardCheck class="w-3.5 h-3.5" /> Mulai Kuis
+              </BaseButton>
+            </div>
+
             <!-- Mark complete -->
             <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
               <div class="flex items-center gap-2 text-sm">
@@ -252,7 +289,7 @@ watch(modules, (mods) => {
                 </span>
               </div>
               <BaseButton
-                v-if="!activeModule.isComplete"
+                v-if="!activeModule.isComplete && !activeModule.quiz"
                 variant="success" size="sm"
                 @click="markModuleComplete"
               >

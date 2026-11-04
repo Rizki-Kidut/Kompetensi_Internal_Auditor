@@ -17,6 +17,10 @@ import BaseButton    from '../../../shared/components/BaseButton.vue'
 import BaseModal     from '../../../shared/components/BaseModal.vue'
 import StatusBadge   from '../../../shared/components/StatusBadge.vue'
 import CompetencySymbol from '../../../shared/components/CompetencySymbol.vue'
+import FileDropzone  from '../../../shared/components/FileDropzone.vue'
+import {
+  acceptAttributeFor, validateMaterialFile, uploadMaterialFile,
+} from '../../../services/materialFileService.js'
 
 const courseStore     = useLmsCourseStore()
 const testStore       = useLmsTestStore()
@@ -138,25 +142,37 @@ const detailEnrollments = computed(() =>
 const moduleFormOpen   = ref(false)
 const moduleErrors     = ref({})
 const moduleEditingId  = ref(null)
-const moduleForm       = ref({ id: '', courseId: '', title: '', sortOrder: 0, prerequisiteModuleId: null })
+const moduleForm       = ref({ id: '', courseId: '', title: '', sortOrder: 0, prerequisiteModuleId: null, quizTestId: '' })
 
+function quizIdForModule(moduleId) {
+  return testStore.tests.find(t => t.moduleId === moduleId)?.id ?? ''
+}
 function openCreateModule() {
   moduleEditingId.value = null
-  moduleForm.value = { id: '', courseId: detailCourse.value.id, title: '', sortOrder: detailModules.value.length, prerequisiteModuleId: null }
+  moduleForm.value = { id: '', courseId: detailCourse.value.id, title: '', sortOrder: detailModules.value.length, prerequisiteModuleId: null, quizTestId: '' }
   moduleErrors.value = {}
   moduleFormOpen.value = true
 }
 function openEditModule(m) {
   moduleEditingId.value = m.id
-  moduleForm.value = { ...m }
+  moduleForm.value = { ...m, quizTestId: quizIdForModule(m.id) }
   moduleErrors.value = {}
   moduleFormOpen.value = true
 }
+async function syncModuleQuiz(moduleId, quizTestId) {
+  for (const t of testStore.tests.filter(t => t.moduleId === moduleId && t.id !== quizTestId)) {
+    await testStore.updateTest({ ...t, moduleId: null })
+  }
+  const quiz = testStore.tests.find(t => t.id === quizTestId)
+  if (quiz && quiz.moduleId !== moduleId) await testStore.updateTest({ ...quiz, moduleId })
+}
 async function saveModule() {
   if (!moduleForm.value.title?.trim()) { moduleErrors.value = { title: 'Judul modul wajib diisi' }; return }
-  const rec = { ...moduleForm.value, id: moduleEditingId.value || `mod-${Date.now()}` }
+  const { quizTestId, ...modFields } = moduleForm.value
+  const rec = { ...modFields, id: moduleEditingId.value || `mod-${Date.now()}` }
   if (moduleEditingId.value) { await courseStore.updateModule(rec); toast.success('Modul diperbarui.') }
   else { await courseStore.addModule(rec); toast.success('Modul ditambahkan.') }
+  await syncModuleQuiz(rec.id, quizTestId)
   moduleFormOpen.value = false
 }
 async function deleteModule(id) {
@@ -173,9 +189,8 @@ async function moveModule(idx, dir) {
   await courseStore.updateModule(a)
   await courseStore.updateModule(b)
 }
-function moduleTitle(id) {
-  if (!id) return null
-  return courseStore.modules.find(m => m.id === id)?.title ?? null
+function quizTitleForModule(moduleId) {
+  return testStore.tests.find(t => t.moduleId === moduleId)?.title ?? 'Belum ada'
 }
 
 // ── Material form ─────────────────────────────────────────
@@ -184,19 +199,42 @@ const materialErrors    = ref({})
 const materialEditingId = ref(null)
 const materialForm      = ref({ id: '', moduleId: '', title: '', type: 'Teks', url: '', content: '', docNumber: '', revision: '', effectiveDate: '', sortOrder: 0 })
 const materialForModule = ref('')
+const materialFileName  = ref('')
+const materialUploading = ref(false)
 
 function openCreateMaterial(moduleId) {
   materialEditingId.value = null
   const mods = courseStore.materialsByModule(moduleId)
   materialForm.value = { id: '', moduleId, title: '', type: 'Teks', url: '', content: '', docNumber: '', revision: '', effectiveDate: '', sortOrder: mods.length }
+  materialFileName.value = ''
   materialErrors.value = {}
   materialFormOpen.value = true
 }
 function openEditMaterial(mat) {
   materialEditingId.value = mat.id
   materialForm.value = { ...mat }
+  materialFileName.value = ''
   materialErrors.value = {}
   materialFormOpen.value = true
+}
+async function onMaterialFileSelected(file) {
+  const problem = validateMaterialFile(file, materialForm.value.type)
+  if (problem) { toast.error(problem); return }
+  materialUploading.value = true
+  try {
+    materialForm.value.url = await uploadMaterialFile(file)
+    materialFileName.value = file.name
+    if (!materialForm.value.title?.trim()) materialForm.value.title = file.name.replace(/\.[^.]+$/, '')
+    materialErrors.value = { ...materialErrors.value, url: '' }
+  } catch (err) {
+    toast.error(`Gagal mengunggah file: ${err.message}`)
+  } finally {
+    materialUploading.value = false
+  }
+}
+function clearMaterialFile() {
+  materialForm.value.url = ''
+  materialFileName.value = ''
 }
 async function saveMaterial() {
   const e = {}
@@ -324,7 +362,7 @@ async function moveMaterial(moduleId, idx, dir) {
               </div>
               <div class="flex-1">
                 <p class="font-semibold text-slate-700 text-sm">{{ m.title }}</p>
-                <p v-if="m.prerequisiteModuleId" class="text-xs text-slate-400 mt-0.5">Prasyarat: {{ moduleTitle(m.prerequisiteModuleId) }}</p>
+                <p class="text-xs text-slate-400 mt-0.5">Kuis: {{ quizTitleForModule(m.id) }}</p>
               </div>
               <button class="ct-action-btn-edit" @click="openEditModule(m)">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
@@ -536,14 +574,12 @@ async function moveMaterial(moduleId, idx, dir) {
           <p v-if="moduleErrors.title" class="text-red-500 text-xs mt-1">{{ moduleErrors.title }}</p>
         </div>
         <div>
-          <label class="ct-label">Modul Prasyarat</label>
-          <select v-model="moduleForm.prerequisiteModuleId" class="ct-input">
-            <option :value="null">-- Tidak ada --</option>
-            <option
-              v-for="m in detailModules.filter(m => m.id !== moduleEditingId)"
-              :key="m.id" :value="m.id"
-            >{{ m.title }}</option>
+          <label class="ct-label">Kuis Modul</label>
+          <select v-model="moduleForm.quizTestId" class="ct-input">
+            <option value="">-- Tanpa kuis --</option>
+            <option v-for="t in detailTests" :key="t.id" :value="t.id">{{ t.title }}</option>
           </select>
+          <p class="text-xs text-slate-400 mt-1">Peserta harus lulus kuis ini sebelum modul berikutnya terbuka.</p>
         </div>
       </div>
       <template #footer>
@@ -572,6 +608,17 @@ async function moveMaterial(moduleId, idx, dir) {
             <input v-model="materialForm.url" class="ct-input" :class="materialErrors.url ? 'border-red-400' : ''" placeholder="https://..." :disabled="materialForm.type === 'Teks'" />
             <p v-if="materialErrors.url" class="text-red-500 text-xs mt-1">{{ materialErrors.url }}</p>
           </div>
+        </div>
+        <div v-if="materialForm.type === 'PDF' || materialForm.type === 'PPT' || materialForm.type === 'Video'">
+          <label class="ct-label">Unggah File</label>
+          <FileDropzone
+            :accept="acceptAttributeFor(materialForm.type)"
+            :file-name="materialFileName"
+            :loading="materialUploading"
+            :hint="`Format ${materialForm.type}, maksimal 50 MB`"
+            @select="onMaterialFileSelected"
+            @clear="clearMaterialFile"
+          />
         </div>
         <div v-if="materialForm.type === 'Teks'">
           <label class="ct-label">Konten Teks</label>
