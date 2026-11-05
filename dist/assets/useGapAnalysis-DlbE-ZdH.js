@@ -1,0 +1,1 @@
+import{c as p}from"./calculationService-GD6jvZjQ.js";import{j as e}from"./index-Brk3qDMa.js";function m(o,s,u){const a=e(()=>p(o.value,s.value,u.value)),c=e(()=>a.value.reduce((t,n)=>t+n.gapCount,0)),l=e(()=>a.value.filter(t=>t.gapCount>0));return{gapData:a,totalGaps:c,criticalItems:l}}export{m as u};
