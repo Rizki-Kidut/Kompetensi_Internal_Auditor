@@ -9,7 +9,7 @@
 ## Risiko utama
 | Risiko | Dampak | Perbaikan |
 |---|---|---|
-| Penilaian esai dihitung di klien dan ditulis langsung ke `lms_attempts` | Nilai dan status lulus bisa dipalsukan | P0-1, P0-2 |
+| Penilaian esai dihitung di klien dan ditulis langsung ke `lms_attempts` | Nilai dan status lulus bisa dipalsukan | P0-1 (RPC), P0-2 (pembatasan tulis tabel) |
 | Update langsung ke `lms_submissions` dan `training_evaluations` | Nilai workshop/tes tertulis bisa diubah, ikut memengaruhi matrix | P0-2, P1-1 |
 | Rute `/lms/admin/*` tanpa guard | Auditor bisa membuka halaman admin lewat URL | P0-3 |
 | `getPublicUrl` untuk bucket `lms-submissions` | Hasil kerja auditor dapat diakses publik lewat URL | P0-5 |
@@ -26,6 +26,8 @@ GRANT  UPDATE (file_url, note, submitted_at, status) ON lms_submissions TO anon,
 -- skor, rubric_scores, feedback, assessor hanya lewat RPC lms_grade_submission
 ```
 Syaratnya: tidak ada lagi update langsung dari store (`updateAttempt`, `updateSubmission`) pada kolom tersebut. Uji dulu di staging; ini menutup pemalsuan skor tetapi tidak menggantikan login.
+
+P0-1 memindahkan validasi skor manual, perhitungan skor akhir, dan perubahan status ke `lms_grade_attempt` (SECURITY DEFINER). RPC mengunci baris attempt selama proses grading dan menolak nilai/ID soal yang tidak valid. Untuk kompatibilitas aplikasi tanpa login, eksekusi saat ini sementara diberikan ke `anon` dan `authenticated`; siapa pun yang dapat memanggil RPC tetap dapat memberi nilai pada attempt yang menunggu. P0-1 karenanya belum aman terhadap pemanggil tanpa otorisasi. TODO(P1-1): setelah autentikasi dan pemetaan peran disetujui, cabut grant `anon` dan periksa bahwa hanya admin/assessor berwenang yang dapat memanggil RPC. P0-1 juga belum terverifikasi penuh sebelum skenario S5 lulus di staging.
 
 ## Rancangan target (usulan, butuh persetujuan pemilik)
 1. **Login:** Supabase Auth (email atau NIK yang dipetakan ke email).

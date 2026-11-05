@@ -59,54 +59,24 @@ export const useLmsEnrollmentStore = defineStore('lmsEnrollment', () => {
    * @returns {Promise<{final_score: number, passed: boolean}|null>}
    */
   async function gradeAttempt(attemptId, manualScores) {
-    let attempt = attempts.value.find(a => a.id === attemptId)
-    if (!attempt) {
-      const { data: att } = await supabase.from('lms_attempts').select('*').eq('id', attemptId).maybeSingle()
-      if (!att) return null
-      attempt = lmsAttemptRowToFrontend(att)
+    const { data, error } = await supabase.rpc('lms_grade_attempt', {
+      p_attempt_id: attemptId,
+      p_manual_scores: manualScores ?? {},
+    })
+    if (error) {
+      throw new Error(`Gagal menilai tes: ${error.message || 'terjadi kesalahan pada server.'}`)
     }
 
-    // Fetch test to get pass grade and total points
-    const { data: test } = await supabase.from('lms_tests').select('*').eq('id', attempt.testId).maybeSingle()
-    if (!test) return null
-
-    // Fetch questions to compute total points and earned
-    const { data: tqRows } = await supabase
-      .from('lms_test_questions')
-      .select('question_id')
-      .eq('test_id', attempt.testId)
-    const qIds = (tqRows ?? []).map(r => r.question_id)
-    const { data: questions } = await supabase.from('lms_questions').select('*').in('id', qIds)
-
-    let totalPoints = 0
-    let earned = Number(attempt.autoScore) || 0
-    for (const q of questions ?? []) {
-      totalPoints += Number(q.points) || 0
-      if (q.type === 'Esai' || q.type === 'Kasus') {
-        earned += Number(manualScores?.[q.id]) || 0
-      }
+    const { data: refreshedAttempts, error: refreshError } = await supabase
+      .from('lms_attempts')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (refreshError) {
+      throw new Error('Penilaian berhasil, tetapi daftar attempt gagal diperbarui. Muat ulang halaman.')
     }
+    attempts.value = (refreshedAttempts ?? []).map(lmsAttemptRowToFrontend)
 
-    const finalScore = totalPoints > 0 ? Math.round((earned / totalPoints) * 100 * 100) / 100 : 0
-    const passed = finalScore >= (test.pass_grade || 80)
-
-    const updated = {
-      ...attempt,
-      manualScore: earned - (Number(attempt.autoScore) || 0),
-      finalScore,
-      passed,
-      status: 'Dinilai',
-    }
-    await updateAttempt(updated)
-
-    // Auto-create draft evaluation if passed
-    if (passed) {
-      await supabase.rpc('lms_create_draft_evaluation', {
-        p_session_id: attempt.sessionId, p_auditor_id: attempt.auditorId,
-      })
-    }
-
-    return { final_score: finalScore, passed }
+    return { final_score: data.final_score, passed: data.passed }
   }
 
   function enrollmentsBySession(sessionId) {

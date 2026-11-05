@@ -134,6 +134,8 @@ async function submitTestGrade() {
     } else {
       toast.error('Gagal menyimpan nilai.')
     }
+  } catch (error) {
+    toast.error(error.message || 'Gagal menilai tes. Periksa kembali nilai dan coba lagi.')
   } finally { gradeLoading.value = false }
 }
 
