@@ -64,5 +64,12 @@ export const useCompetencyStore = defineStore('competency', () => {
     matrix.value.push(...newCells.map(competencyCellRowToFrontend))
   }
 
-  return { items, matrix, loading, load, updateCell, getCell, addAuditorCells }
+  async function addItem(item) {
+    const { error } = await supabase.from('competency_items').insert(competencyItemFrontendToRow(item))
+    if (error) { console.error('[competencyStore] addItem error:', error.message); return false }
+    items.value.push(item)
+    return true
+  }
+
+  return { items, matrix, loading, load, updateCell, getCell, addAuditorCells, addItem }
 })

@@ -34,6 +34,31 @@ const groupedItems = computed(() => {
   for (const item of competencyStore.items) (groups[item.category] ??= []).push(item)
   return Object.entries(groups)
 })
+const categories = computed(() => [...new Set(competencyStore.items.map(i => i.category))])
+
+const newItem = ref({ category: '', itemName: '' })
+const addingItem = ref(false)
+
+async function addCompetencyItem() {
+  const category = newItem.value.category.trim()
+  const itemName = newItem.value.itemName.trim()
+  if (!category || !itemName) {
+    toast.error('Kategori dan nama kompetensi wajib diisi.')
+    return
+  }
+  addingItem.value = true
+  const item = { id: `ci-${Date.now()}`, category, itemName }
+  const ok = await competencyStore.addItem(item)
+  if (!ok) {
+    addingItem.value = false
+    toast.error('Kompetensi gagal ditambahkan. Coba lagi.')
+    return
+  }
+  for (const auditor of auditorStore.auditors) await competencyStore.addAuditorCells(auditor.id)
+  newItem.value = { category: '', itemName: '' }
+  addingItem.value = false
+  toast.success(`Kompetensi "${itemName}" berhasil ditambahkan.`)
+}
 
 function toggleArea(area) {
   form.value.areaAuditPermission[area] = form.value.areaAuditPermission[area] === 'O' ? 'X' : 'O'
@@ -48,6 +73,11 @@ function validate() {
   if (!f.section.trim()) e.section  = 'Seksi wajib diisi'
   if (!f.position)       e.position = 'Jabatan wajib dipilih'
   return e
+}
+
+function resetForm() {
+  form.value = emptyForm()
+  errors.value = {}
 }
 
 async function save() {
@@ -89,8 +119,7 @@ async function save() {
   })
 
   toast.success(`Auditor "${name}" berhasil dimasukkan ke sistem.`)
-  form.value = emptyForm()
-  errors.value = {}
+  resetForm()
   saving.value = false
 }
 </script>
@@ -102,10 +131,10 @@ async function save() {
       <p class="text-slate-500 text-sm mt-1">Pindahkan data auditor dari hardcopy langsung ke sistem tanpa alur pengajuan</p>
     </div>
 
-    <div class="grid gap-5 max-w-4xl">
+    <div class="grid gap-5">
       <section class="ct-card p-5">
         <h2 class="font-semibold text-slate-700 mb-4">Data Auditor</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="ct-label">NIK <span class="text-red-500">*</span></label>
             <input v-model="form.nik" class="ct-input" />
@@ -145,7 +174,7 @@ async function save() {
 
       <section class="ct-card p-5">
         <h2 class="font-semibold text-slate-700 mb-4">Scope Audit</h2>
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap gap-6">
           <label v-for="scope in AUDIT_SCOPES" :key="scope.key" class="flex items-center gap-2 text-sm text-slate-600">
             <input v-model="form.scopeAuditor[scope.key]" type="checkbox" class="w-4 h-4" />
             {{ scope.label }}
@@ -174,24 +203,47 @@ async function save() {
       </section>
 
       <section class="ct-card p-5">
-        <h2 class="font-semibold text-slate-700 mb-1">Kompetensi</h2>
-        <p class="text-xs text-slate-500 mb-4">Kosongkan jika belum ada penilaian untuk item tersebut</p>
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 class="font-semibold text-slate-700">Kompetensi</h2>
+            <p class="text-xs text-slate-500 mt-1">Isi level untuk setiap kompetensi. Kosongkan jika belum ada penilaian.</p>
+          </div>
+        </div>
+
         <div v-for="[category, items] in groupedItems" :key="category" class="mb-5 last:mb-0">
           <p class="ct-label mb-2">{{ category }}</p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div v-for="item in items" :key="item.id" class="flex items-center justify-between gap-3">
               <span class="text-sm text-slate-600">{{ item.itemName }}</span>
-              <select v-model="form.levels[item.id]" class="ct-input w-44">
+              <select v-model="form.levels[item.id]" class="ct-input w-48">
                 <option v-for="level in LEVELS" :key="level" :value="level">{{ LEVEL_LABELS[level] }}</option>
               </select>
             </div>
           </div>
         </div>
-        <p v-if="!groupedItems.length" class="text-sm text-slate-400 italic">Daftar item kompetensi belum tersedia</p>
+        <p v-if="!groupedItems.length" class="text-sm text-slate-400 italic">Belum ada item kompetensi. Tambahkan di bawah.</p>
+
+        <div class="mt-6 pt-5 border-t border-slate-100">
+          <p class="ct-label mb-2">Tambah Item Kompetensi Baru</p>
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+            <div>
+              <label class="text-xs text-slate-500">Kategori</label>
+              <input v-model="newItem.category" list="competency-categories" class="ct-input" placeholder="Contoh: Audit Produk" />
+              <datalist id="competency-categories">
+                <option v-for="c in categories" :key="c" :value="c" />
+              </datalist>
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">Nama Kompetensi</label>
+              <input v-model="newItem.itemName" class="ct-input" placeholder="Contoh: Audit Proses Produksi" />
+            </div>
+            <BaseButton variant="secondary" :loading="addingItem" @click="addCompetencyItem">Tambah Kompetensi</BaseButton>
+          </div>
+        </div>
       </section>
 
       <div class="flex justify-end gap-3">
-        <BaseButton variant="secondary" :disabled="saving" @click="form = emptyForm(); errors = {}">Reset</BaseButton>
+        <BaseButton variant="secondary" :disabled="saving" @click="resetForm">Reset</BaseButton>
         <BaseButton variant="primary" :loading="saving" @click="save">Simpan Auditor</BaseButton>
       </div>
     </div>
