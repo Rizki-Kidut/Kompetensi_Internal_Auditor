@@ -6,6 +6,7 @@ import { useCompetencyStore } from '../../../stores/competencyStore.js'
 import BaseTable from '../../../shared/components/BaseTable.vue'
 import StatusBadge from '../../../shared/components/StatusBadge.vue'
 import AuditorFormModal from '../components/AuditorFormModal.vue'
+import { AUDIT_AREAS } from '../../../shared/constants/auditAreas.js'
 
 const auditorStore    = useAuditorStore()
 const competencyStore = useCompetencyStore()
@@ -16,7 +17,6 @@ const filter    = ref('Aktif')
 const detailOpen  = ref(false)
 const detailAuditor = ref(null)
 
-const AREAS = ['Area Produksi A', 'Area Produksi B', 'Gudang RM', 'Gudang FG', 'Maintenance']
 const SCOPE_LABELS = { qms: 'QMS', manufakturShift: 'Mfg Shift', produk: 'Produk', supplier: 'Supplier' }
 const SCOPE_COLOR  = { qms: 'ct-badge-blue', manufakturShift: 'ct-badge-amber', produk: 'ct-badge-emerald', supplier: 'ct-badge-red' }
 
@@ -141,7 +141,7 @@ const inactiveCount = computed(() => auditorStore.auditors.filter(a => a.status 
               <th class="px-3 py-2.5 text-left text-slate-600 font-semibold sticky left-0 bg-slate-50 min-w-[140px]">Nama</th>
               <th class="px-3 py-2.5 text-left text-slate-500 font-medium min-w-[120px]">Seksi</th>
               <th
-                v-for="area in AREAS"
+                v-for="area in AUDIT_AREAS"
                 :key="area"
                 class="px-3 py-2.5 text-center text-slate-600 font-semibold whitespace-nowrap"
               >
@@ -158,7 +158,7 @@ const inactiveCount = computed(() => auditorStore.auditors.filter(a => a.status 
             >
               <td class="px-3 py-2.5 font-medium text-slate-700 sticky left-0 bg-white">{{ a.name }}</td>
               <td class="px-3 py-2.5 text-slate-500">{{ a.section }}</td>
-              <td v-for="area in AREAS" :key="area" class="px-3 py-2.5 text-center">
+              <td v-for="area in AUDIT_AREAS" :key="area" class="px-3 py-2.5 text-center">
                 <span
                   :class="a.areaAuditPermission?.[area] === 'O'
                     ? 'text-emerald-600 font-black text-base'
@@ -177,7 +177,7 @@ const inactiveCount = computed(() => auditorStore.auditors.filter(a => a.status 
     <AuditorFormModal
       v-model="detailOpen"
       :auditor="detailAuditor"
-      :areas="AREAS"
+      :areas="AUDIT_AREAS"
       :competency-summary="detailAuditor ? buildCompetencySummary(detailAuditor.id) : []"
     />
   </div>

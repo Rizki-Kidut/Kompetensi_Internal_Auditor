@@ -49,6 +49,7 @@ const navGroups = computed(() => {
         { name: 'Daftar Auditor', path: '/auditor', icon: Users },
         { name: 'Pengajuan Auditor Baru', path: '/auditor/tambah', icon: UserPlus },
         { name: 'Pengajuan Non-Aktif', path: '/auditor/nonaktif', icon: UserMinus },
+        { name: 'Input Auditor Existing', path: '/auditor/input', icon: FilePen },
       ],
     },
     {

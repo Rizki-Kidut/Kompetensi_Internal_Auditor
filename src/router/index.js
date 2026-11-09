@@ -24,6 +24,11 @@ const routes = [
     name: 'PengajuanNonAktif',
     component: () => import('../modules/auditor-request/views/PengajuanNonAktifAuditor.vue'),
   },
+  {
+    path: '/auditor/input',
+    name: 'InputAuditorExisting',
+    component: () => import('../modules/auditor-master/views/InputAuditorExisting.vue'),
+  },
   // Competency Matrix
   {
     path: '/kompetensi',
