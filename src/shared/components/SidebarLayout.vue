@@ -18,6 +18,7 @@ import {
   CalendarDays,
   FilePen,
   Wrench,
+  MapPin,
   Award,
   FileQuestion,
   ClipboardPenLine,
@@ -50,6 +51,7 @@ const navGroups = computed(() => {
         { name: 'Pengajuan Auditor Baru', path: '/auditor/tambah', icon: UserPlus },
         { name: 'Pengajuan Non-Aktif', path: '/auditor/nonaktif', icon: UserMinus },
         { name: 'Input Auditor Existing', path: '/auditor/input', icon: FilePen },
+        { name: 'Area Audit', path: '/auditor/area', icon: MapPin },
       ],
     },
     {

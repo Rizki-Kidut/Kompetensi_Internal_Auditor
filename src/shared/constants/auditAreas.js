@@ -1,5 +1,3 @@
-export const AUDIT_AREAS = ['Area Produksi A', 'Area Produksi B', 'Gudang RM', 'Gudang FG', 'Maintenance']
-
 export const AUDIT_POSITIONS = ['Staff', 'Group Leader', 'Section Manager', 'DDM/Dept Manager', 'Division Head']
 
 export const AUDIT_SCOPES = [

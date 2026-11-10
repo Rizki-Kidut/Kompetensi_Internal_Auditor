@@ -9,7 +9,7 @@ import AreaAssignmentMatrix from './AreaAssignmentMatrix.vue'
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
   auditor: { type: Object, default: null },
-  areas: { type: Array, default: () => ['Area Produksi A', 'Area Produksi B', 'Gudang RM', 'Gudang FG', 'Maintenance'] },
+  areas: { type: Array, required: true },
   competencySummary: { type: Array, default: () => [] }, // [{ category, levels[] }]
 })
 const emit = defineEmits(['update:modelValue'])

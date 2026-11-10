@@ -4,14 +4,16 @@ import { useAuditorStore } from '../../../stores/auditorStore.js'
 import { useCompetencyStore } from '../../../stores/competencyStore.js'
 import { useRevisionLogStore } from '../../../stores/revisionLogStore.js'
 import { useToast } from '../../../shared/composables/useToast.js'
-import { AUDIT_AREAS, AUDIT_POSITIONS, AUDIT_SCOPES } from '../../../shared/constants/auditAreas.js'
+import { AUDIT_POSITIONS, AUDIT_SCOPES } from '../../../shared/constants/auditAreas.js'
+import { useAuditAreaStore } from '../../../stores/auditAreaStore.js'
 import BaseButton from '../../../shared/components/BaseButton.vue'
 
 const auditorStore    = useAuditorStore()
 const competencyStore = useCompetencyStore()
 const revisionStore   = useRevisionLogStore()
+const areaStore       = useAuditAreaStore()
 const toast = useToast()
-onMounted(() => { auditorStore.load(); competencyStore.load() })
+onMounted(() => { auditorStore.load(); competencyStore.load(); areaStore.load() })
 
 const LEVELS = ['', '●', '◆', '★']
 const LEVEL_LABELS = { '': 'Belum dinilai', '●': '● Cukup Kompeten', '◆': '◆ Kompeten', '★': '★ Sangat Kompeten' }
@@ -20,7 +22,7 @@ function emptyForm() {
   return {
     nik: '', name: '', section: '', position: '', status: 'Aktif', joinAsAuditorDate: '',
     scopeAuditor: { qms: false, manufakturShift: false, produk: false, supplier: false },
-    areaAuditPermission: Object.fromEntries(AUDIT_AREAS.map(area => [area, 'X'])),
+    areaAuditPermission: {},
     levels: {},
   }
 }
@@ -35,6 +37,7 @@ const groupedItems = computed(() => {
   return Object.entries(groups)
 })
 const categories = computed(() => [...new Set(competencyStore.items.map(i => i.category))])
+const areaNames = computed(() => areaStore.areas.map(a => a.name))
 
 const newItem = ref({ category: '', itemName: '' })
 const addingItem = ref(false)
@@ -60,8 +63,12 @@ async function addCompetencyItem() {
   toast.success(`Kompetensi "${itemName}" berhasil ditambahkan.`)
 }
 
+function permissionOf(area) {
+  return form.value.areaAuditPermission[area] ?? 'X'
+}
+
 function toggleArea(area) {
-  form.value.areaAuditPermission[area] = form.value.areaAuditPermission[area] === 'O' ? 'X' : 'O'
+  form.value.areaAuditPermission[area] = permissionOf(area) === 'O' ? 'X' : 'O'
 }
 
 function validate() {
@@ -96,7 +103,7 @@ async function save() {
     position: f.position,
     status: f.status,
     scopeAuditor: { ...f.scopeAuditor },
-    areaAuditPermission: { ...f.areaAuditPermission },
+    areaAuditPermission: Object.fromEntries(areaNames.value.map(area => [area, f.areaAuditPermission[area] ?? 'X'])),
     joinAsAuditorDate: f.joinAsAuditorDate,
   })
   if (!auditorStore.auditors.some(a => a.id === id)) {
@@ -187,16 +194,16 @@ async function save() {
         <p class="text-xs text-slate-500 mb-4">Klik area untuk mengubah O (boleh) atau X (tidak boleh)</p>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
           <button
-            v-for="area in AUDIT_AREAS"
+            v-for="area in areaNames"
             :key="area"
             type="button"
             class="rounded-xl border px-3 py-3 text-sm font-medium transition-colors"
-            :class="form.areaAuditPermission[area] === 'O'
+            :class="permissionOf(area) === 'O'
               ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
               : 'border-slate-200 bg-white text-slate-400'"
             @click="toggleArea(area)"
           >
-            <span class="block font-black text-lg">{{ form.areaAuditPermission[area] }}</span>
+            <span class="block font-black text-lg">{{ permissionOf(area) }}</span>
             {{ area }}
           </button>
         </div>

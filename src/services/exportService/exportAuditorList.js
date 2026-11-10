@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
-export function exportAuditorList(auditors, revisionLog) {
+export function exportAuditorList(auditors, revisionLog, areaKeys) {
   const doc  = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const PW   = doc.internal.pageSize.getWidth()
   const date = new Date().toLocaleDateString('id-ID')
@@ -28,7 +28,6 @@ export function exportAuditorList(auditors, revisionLog) {
   doc.text('Halaman      : 1/1', PW - 14, 21, { align: 'right' })
 
   // ── Main table ──────────────────────────────────────────────────────────
-  const areaKeys = ['Area Produksi A', 'Area Produksi B', 'Gudang RM', 'Gudang FG', 'Maintenance']
   const active   = auditors.filter(a => a.status === 'Aktif')
 
   const head = [[

@@ -29,6 +29,11 @@ const routes = [
     name: 'InputAuditorExisting',
     component: () => import('../modules/auditor-master/views/InputAuditorExisting.vue'),
   },
+  {
+    path: '/auditor/area',
+    name: 'KelolaAreaAudit',
+    component: () => import('../modules/auditor-master/views/KelolaAreaAudit.vue'),
+  },
   // Competency Matrix
   {
     path: '/kompetensi',

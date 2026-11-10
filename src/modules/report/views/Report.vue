@@ -4,6 +4,7 @@ import { FileText, Table, Download } from '@lucide/vue'
 import { useAuditorStore }         from '../../../stores/auditorStore.js'
 import { useCompetencyStore }      from '../../../stores/competencyStore.js'
 import { useRevisionLogStore }     from '../../../stores/revisionLogStore.js'
+import { useAuditAreaStore }        from '../../../stores/auditAreaStore.js'
 import { useEvaluationStore }      from '../../../stores/evaluationStore.js'
 import { useTrainingSessionStore } from '../../../stores/trainingSessionStore.js'
 import { useToast }                from '../../../shared/composables/useToast.js'
@@ -14,6 +15,7 @@ import { exportQualificationCard, exportQualificationCardBatch } from '../../../
 const auditorStore  = useAuditorStore()
 const competency    = useCompetencyStore()
 const revisionStore  = useRevisionLogStore()
+const areaStore      = useAuditAreaStore()
 const evalStore      = useEvaluationStore()
 const sessionStore   = useTrainingSessionStore()
 const toast          = useToast()
@@ -22,7 +24,7 @@ const loading       = ref('')
 const cardAuditorId = ref('')
 
 onMounted(() => {
-  auditorStore.load(); competency.load(); revisionStore.load()
+  auditorStore.load(); competency.load(); revisionStore.load(); areaStore.load()
   evalStore.load(); sessionStore.load()
 })
 
@@ -48,7 +50,7 @@ function runExport(key, fn) {
 
 function doAuditorList() {
   runExport('auditor', () =>
-    exportAuditorList(auditorStore.auditors, revisionStore.entries)
+    exportAuditorList(auditorStore.auditors, revisionStore.entries, areaStore.areas.map(a => a.name))
   )
 }
 
