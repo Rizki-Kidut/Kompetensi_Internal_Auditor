@@ -36,32 +36,7 @@ const groupedItems = computed(() => {
   for (const item of competencyStore.items) (groups[item.category] ??= []).push(item)
   return Object.entries(groups)
 })
-const categories = computed(() => [...new Set(competencyStore.items.map(i => i.category))])
 const areaNames = computed(() => areaStore.areas.map(a => a.name))
-
-const newItem = ref({ category: '', itemName: '' })
-const addingItem = ref(false)
-
-async function addCompetencyItem() {
-  const category = newItem.value.category.trim()
-  const itemName = newItem.value.itemName.trim()
-  if (!category || !itemName) {
-    toast.error('Kategori dan nama kompetensi wajib diisi.')
-    return
-  }
-  addingItem.value = true
-  const item = { id: `ci-${Date.now()}`, category, itemName }
-  const ok = await competencyStore.addItem(item)
-  if (!ok) {
-    addingItem.value = false
-    toast.error('Kompetensi gagal ditambahkan. Coba lagi.')
-    return
-  }
-  for (const auditor of auditorStore.auditors) await competencyStore.addAuditorCells(auditor.id)
-  newItem.value = { category: '', itemName: '' }
-  addingItem.value = false
-  toast.success(`Kompetensi "${itemName}" berhasil ditambahkan.`)
-}
 
 function permissionOf(area) {
   return form.value.areaAuditPermission[area] ?? 'X'
@@ -228,25 +203,7 @@ async function save() {
             </div>
           </div>
         </div>
-        <p v-if="!groupedItems.length" class="text-sm text-slate-400 italic">Belum ada item kompetensi. Tambahkan di bawah.</p>
-
-        <div class="mt-6 pt-5 border-t border-slate-100">
-          <p class="ct-label mb-2">Tambah Item Kompetensi Baru</p>
-          <div class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
-            <div>
-              <label class="text-xs text-slate-500">Kategori</label>
-              <input v-model="newItem.category" list="competency-categories" class="ct-input" placeholder="Contoh: Audit Produk" />
-              <datalist id="competency-categories">
-                <option v-for="c in categories" :key="c" :value="c" />
-              </datalist>
-            </div>
-            <div>
-              <label class="text-xs text-slate-500">Nama Kompetensi</label>
-              <input v-model="newItem.itemName" class="ct-input" placeholder="Contoh: Audit Proses Produksi" />
-            </div>
-            <BaseButton variant="secondary" :loading="addingItem" @click="addCompetencyItem">Tambah Kompetensi</BaseButton>
-          </div>
-        </div>
+        <p v-if="!groupedItems.length" class="text-sm text-slate-400 italic">Belum ada item kompetensi. Tambahkan lewat menu Daftar Kompetensi.</p>
       </section>
 
       <div class="flex justify-end gap-3">

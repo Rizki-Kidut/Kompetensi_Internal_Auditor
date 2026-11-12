@@ -19,6 +19,7 @@ import {
   FilePen,
   Wrench,
   MapPin,
+  ListPlus,
   Award,
   FileQuestion,
   ClipboardPenLine,
@@ -58,6 +59,7 @@ const navGroups = computed(() => {
       label: 'Kompetensi',
       items: [
         { name: 'Matrix Kompetensi', path: '/kompetensi', icon: Grid3X3 },
+        { name: 'Daftar Kompetensi', path: '/kompetensi/daftar', icon: ListPlus },
       ],
     },
     {

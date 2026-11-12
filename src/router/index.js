@@ -40,6 +40,11 @@ const routes = [
     name: 'MatrixKompetensi',
     component: () => import('../modules/competency-matrix/views/MatrixKompetensi.vue'),
   },
+  {
+    path: '/kompetensi/daftar',
+    name: 'KelolaKompetensi',
+    component: () => import('../modules/competency-matrix/views/KelolaKompetensi.vue'),
+  },
   // Training Plan
   {
     path: '/training/rencana',
