@@ -56,7 +56,7 @@ function doAuditorList() {
 
 function doMatrix() {
   runExport('matrix', () =>
-    exportCompetencyMatrix(auditorStore.auditors, competency.items, competency.matrix, revisionStore.entries)
+    exportCompetencyMatrix(auditorStore.auditors, competency.items, competency.matrix, revisionStore.entries, competency.categories)
   )
 }
 

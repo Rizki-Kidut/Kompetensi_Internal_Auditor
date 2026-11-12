@@ -27,7 +27,7 @@ onMounted(() => {
 })
 
 // ─── Constants ────────────────────────────────────────────
-const CATEGORIES = ['Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
+const DEFAULT_CAT_STYLE = { bg: 'bg-slate-700', text: 'text-slate-50', border: 'border-slate-600' }
 
 const CAT_STYLE = {
   'Auditor QMS':                { bg: 'bg-blue-800',    text: 'text-blue-50',    border: 'border-blue-700' },
@@ -65,7 +65,7 @@ const visibleItems = computed(() =>
 // Only include categories that have at least one visible item
 const itemsByCategory = computed(() => {
   const map = {}
-  for (const cat of CATEGORIES) {
+  for (const cat of competency.categories) {
     const catItems = visibleItems.value.filter(i => i.category === cat)
     if (catItems.length) map[cat] = catItems
   }
@@ -147,6 +147,7 @@ function doExport() {
     visibleItems.value,
     competency.matrix,
     revisionStore.entries,
+    competency.categories,
   )
 }
 </script>
@@ -177,7 +178,7 @@ function doExport() {
 
       <div class="flex flex-wrap gap-1.5 ml-auto">
         <button
-          v-for="cat in ['Semua', ...CATEGORIES]"
+          v-for="cat in ['Semua', ...competency.categories]"
           :key="cat"
           :class="categoryFilter === cat ? 'btn-primary' : 'btn-secondary'"
           class="text-xs px-3 py-1.5"
@@ -244,7 +245,7 @@ function doExport() {
                 v-for="(catItems, cat) in itemsByCategory"
                 :key="cat"
                 :colspan="catItems.length"
-                :class="[CAT_STYLE[cat]?.bg, CAT_STYLE[cat]?.text, 'text-center border-l-2 border-white/30 px-2']"
+                :class="[(CAT_STYLE[cat] ?? DEFAULT_CAT_STYLE).bg, (CAT_STYLE[cat] ?? DEFAULT_CAT_STYLE).text, 'text-center border-l-2 border-white/30 px-2']"
                 style="position: sticky; top: 0; z-index: 30; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; height: 32px;"
               >
                 {{ cat }}
@@ -350,7 +351,7 @@ function doExport() {
         <!-- Item + category info -->
         <div class="flex items-center gap-2 mb-4">
           <span
-            :class="[CAT_STYLE[histItem.category]?.bg, CAT_STYLE[histItem.category]?.text, 'ct-badge text-[10px] px-2 py-0.5']"
+            :class="[(CAT_STYLE[histItem.category] ?? DEFAULT_CAT_STYLE).bg, (CAT_STYLE[histItem.category] ?? DEFAULT_CAT_STYLE).text, 'ct-badge text-[10px] px-2 py-0.5']"
           >
             {{ histItem.category }}
           </span>

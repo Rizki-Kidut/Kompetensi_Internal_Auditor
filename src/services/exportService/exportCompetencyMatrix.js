@@ -1,12 +1,6 @@
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
-const CATEGORIES = [
-  'Auditor QMS',
-  'Audit Manufaktur dan Shift',
-  'Audit Produk',
-  'Audit Supplier',
-]
 const CAT_COLORS = [
   [14, 79, 163],   // blue  — QMS
   [21, 107, 60],   // green — Manufaktur
@@ -14,7 +8,7 @@ const CAT_COLORS = [
   [100, 20, 120],  // purple — Supplier
 ]
 
-export function exportCompetencyMatrix(auditors, items, matrix, revisionLog) {
+export function exportCompetencyMatrix(auditors, items, matrix, revisionLog, categories) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const PW  = doc.internal.pageSize.getWidth()
   const PH  = doc.internal.pageSize.getHeight()
@@ -35,9 +29,9 @@ export function exportCompetencyMatrix(auditors, items, matrix, revisionLog) {
   doc.text('Halaman      : 1/1', PW - 14, 17, { align: 'right' })
 
   // ── Build head: 2 rows — row1 = category span, row2 = item names ────────
-  const grouped = CATEGORIES.map((cat, ci) => ({
+  const grouped = categories.map((cat, ci) => ({
     cat,
-    color: CAT_COLORS[ci],
+    color: CAT_COLORS[ci % CAT_COLORS.length],
     items: items.filter(i => i.category === cat),
   }))
   const allItems = grouped.flatMap(g => g.items)
@@ -99,7 +93,7 @@ export function exportCompetencyMatrix(auditors, items, matrix, revisionLog) {
       if (data.section === 'body') {
         const ci = itemCatMap[data.column.index]
         if (ci !== undefined) {
-          const c = CAT_COLORS[ci]
+          const c = CAT_COLORS[ci % CAT_COLORS.length]
           // Tint body cells by category (very light)
           const tint = [200 + c[0] / 10, 220, 230]
           if (data.row.index % 2 === 0) data.cell.styles.fillColor = tint

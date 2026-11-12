@@ -40,8 +40,7 @@ const columns = [
 ]
 
 function buildCompetencySummary(auditorId) {
-  const CATEGORIES = ['Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
-  return CATEGORIES.map(cat => {
+  return competencyStore.categories.map(cat => {
     const catItems = competencyStore.items.filter(i => i.category === cat)
     const cells = catItems.map(item => {
       const cell = competencyStore.getCell(auditorId, item.id)

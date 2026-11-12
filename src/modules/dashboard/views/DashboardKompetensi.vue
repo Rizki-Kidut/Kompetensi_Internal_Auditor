@@ -58,7 +58,6 @@ const { gapData, totalGaps } = useGapAnalysis(
 
 const topGaps = computed(() => gapData.value.filter(g => g.gapCount > 0).slice(0, 6))
 
-const CATEGORIES = ['Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
 const CAT_SHORT = {
   'Auditor QMS': 'QMS',
   'Audit Manufaktur dan Shift': 'Mfg & Shift',
@@ -71,11 +70,14 @@ const CAT_COLORS = {
   'Audit Produk':                 { bar: 'bg-amber-500',   chip: 'bg-amber-50 text-amber-700 border-amber-200' },
   'Audit Supplier':               { bar: 'bg-rose-500',    chip: 'bg-rose-50 text-rose-700 border-rose-200' },
 }
+const DEFAULT_CAT_COLOR = { bar: 'bg-slate-500', chip: 'bg-slate-50 text-slate-700 border-slate-200' }
+const catShort = cat => CAT_SHORT[cat] ?? cat
+const catColor = cat => CAT_COLORS[cat] ?? DEFAULT_CAT_COLOR
 
 const gapByCategory = computed(() =>
-  CATEGORIES.map(cat => {
+  competency.categories.map(cat => {
     const items = gapData.value.filter(g => g.item.category === cat)
-    return { cat, short: CAT_SHORT[cat], totalGaps: items.reduce((s, g) => s + g.gapCount, 0), itemCount: items.length }
+    return { cat, short: catShort(cat), totalGaps: items.reduce((s, g) => s + g.gapCount, 0), itemCount: items.length }
   })
 )
 const maxCatGaps = computed(() => Math.max(1, ...gapByCategory.value.map(c => c.totalGaps)))
@@ -234,12 +236,12 @@ const currentPeriod = computed(() => {
         <div class="space-y-3">
           <div v-for="cat in gapByCategory" :key="cat.cat">
             <div class="flex items-center justify-between mb-1.5">
-              <span :class="['text-xs font-bold px-2 py-0.5 rounded border', CAT_COLORS[cat.cat].chip]">{{ cat.short }}</span>
+              <span :class="['text-xs font-bold px-2 py-0.5 rounded border', catColor(cat.cat).chip]">{{ cat.short }}</span>
               <span class="text-sm font-bold text-slate-600">{{ cat.totalGaps }} gap <span class="text-slate-400 font-normal text-xs">/ {{ cat.itemCount }} item</span></span>
             </div>
             <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                :class="['h-full rounded-full transition-all duration-500', CAT_COLORS[cat.cat].bar]"
+                :class="['h-full rounded-full transition-all duration-500', catColor(cat.cat).bar]"
                 :style="`width: ${Math.round((cat.totalGaps / maxCatGaps) * 100)}%`"
               />
             </div>
@@ -268,8 +270,8 @@ const currentPeriod = computed(() => {
             :key="gap.item.id"
             class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-blue-50/60 transition-colors"
           >
-            <span :class="['text-xs font-bold px-2 py-0.5 rounded border shrink-0', CAT_COLORS[gap.item.category].chip]">
-              {{ CAT_SHORT[gap.item.category] }}
+            <span :class="['text-xs font-bold px-2 py-0.5 rounded border shrink-0', catColor(gap.item.category).chip]">
+              {{ catShort(gap.item.category) }}
             </span>
             <span class="text-sm text-slate-700 flex-1 truncate">{{ gap.item.itemName }}</span>
             <span class="font-bold text-rose-600 text-sm shrink-0">{{ gap.gapCount }}</span>

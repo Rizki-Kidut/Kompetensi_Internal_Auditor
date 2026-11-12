@@ -635,7 +635,7 @@ function classColor(cls) {
               <select v-model="form.skillMapUpdate.competencyItemId" class="ct-input">
                 <option value="">-- Tidak ada update skill map --</option>
                 <optgroup
-                  v-for="cat in ['Auditor QMS','Audit Manufaktur dan Shift','Audit Produk','Audit Supplier']"
+                  v-for="cat in competency.categories"
                   :key="cat" :label="cat"
                 >
                   <option v-for="item in competency.items.filter(i => i.category === cat)" :key="item.id" :value="item.id">

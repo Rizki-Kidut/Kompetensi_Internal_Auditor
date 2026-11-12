@@ -399,7 +399,7 @@ const planStats = computed(() => ({
           <select v-model="form.competencyItemId" class="ct-input" :class="formErrors.competencyItemId ? 'border-red-400' : ''">
             <option value="">-- Pilih item kompetensi --</option>
             <optgroup
-              v-for="cat in ['Auditor QMS','Audit Manufaktur dan Shift','Audit Produk','Audit Supplier']"
+              v-for="cat in competency.categories"
               :key="cat"
               :label="cat"
             >

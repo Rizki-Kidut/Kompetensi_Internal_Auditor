@@ -1,20 +1,30 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { supabase } from '../services/supabaseClient.js'
 import {
   competencyItemRowToFrontend, competencyItemFrontendToRow,
   competencyCellRowToFrontend, competencyCellFrontendToRow,
 } from '../services/dataMappers.js'
 
+const CATEGORY_ORDER = ['Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
+
 export const useCompetencyStore = defineStore('competency', () => {
   const items = ref([])
   const matrix = ref([])
   const loading = ref(false)
 
+  const categories = computed(() => {
+    const present = [...new Set(items.value.map(i => i.category))]
+    return [
+      ...CATEGORY_ORDER.filter(c => present.includes(c)),
+      ...present.filter(c => !CATEGORY_ORDER.includes(c)).sort(),
+    ]
+  })
+
   async function load() {
     loading.value = true
     const [itemsRes, cellsRes] = await Promise.all([
-      supabase.from('competency_items').select('*').order('category, item_name'),
+      supabase.from('competency_items').select('*').order('category').order('item_name'),
       supabase.from('competency_cells').select('*'),
     ])
     if (itemsRes.error) console.error('[competencyStore] items load error:', itemsRes.error.message)
@@ -71,5 +81,13 @@ export const useCompetencyStore = defineStore('competency', () => {
     return true
   }
 
-  return { items, matrix, loading, load, updateCell, getCell, addAuditorCells, addItem }
+  async function updateItemName(id, itemName) {
+    const { error } = await supabase.from('competency_items').update({ item_name: itemName }).eq('id', id)
+    if (error) { console.error('[competencyStore] updateItemName error:', error.message); return false }
+    const item = items.value.find(i => i.id === id)
+    if (item) item.itemName = itemName
+    return true
+  }
+
+  return { items, categories, matrix, loading, load, updateCell, getCell, addAuditorCells, addItem, updateItemName }
 })
