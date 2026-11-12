@@ -6,7 +6,7 @@ import {
   competencyCellRowToFrontend, competencyCellFrontendToRow,
 } from '../services/dataMappers.js'
 
-const CATEGORY_ORDER = ['Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
+const CATEGORY_ORDER = ['Audit Quality Management System', 'Auditor QMS', 'Audit Manufaktur dan Shift', 'Audit Produk', 'Audit Supplier']
 
 export const useCompetencyStore = defineStore('competency', () => {
   const items = ref([])
@@ -19,6 +19,11 @@ export const useCompetencyStore = defineStore('competency', () => {
       ...CATEGORY_ORDER.filter(c => present.includes(c)),
       ...present.filter(c => !CATEGORY_ORDER.includes(c)).sort(),
     ]
+  })
+
+  const categoryOptions = computed(() => {
+    const present = [...new Set(items.value.map(i => i.category))]
+    return [...new Set([...CATEGORY_ORDER, ...present])]
   })
 
   async function load() {
@@ -89,5 +94,5 @@ export const useCompetencyStore = defineStore('competency', () => {
     return true
   }
 
-  return { items, categories, matrix, loading, load, updateCell, getCell, addAuditorCells, addItem, updateItemName }
+  return { items, categories, categoryOptions, matrix, loading, load, updateCell, getCell, addAuditorCells, addItem, updateItemName }
 })

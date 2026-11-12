@@ -95,7 +95,7 @@ async function saveEdit(item) {
             <label class="text-xs text-slate-500">Kelompok</label>
             <input v-model="newItem.category" list="competency-categories" class="ct-input" placeholder="Contoh: Audit Produk" />
             <datalist id="competency-categories">
-              <option v-for="c in competency.categories" :key="c" :value="c" />
+              <option v-for="c in competency.categoryOptions" :key="c" :value="c" />
             </datalist>
           </div>
           <div>
