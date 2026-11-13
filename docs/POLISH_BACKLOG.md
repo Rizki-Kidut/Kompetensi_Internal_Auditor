@@ -8,10 +8,11 @@ Prioritas: **P0** = kebenaran nilai dan keamanan, **P1** = celah fungsi dan keta
 ## P0
 
 ### P0-1 Pindahkan penilaian esai ke server
-- **Masalah:** `gradeAttempt` di `src/stores/lmsEnrollmentStore.js` menghitung `final_score` dan `passed` di browser lalu menulisnya langsung ke `lms_attempts`. RPC `lms_grade_attempt` yang diminta pada rancangan tidak pernah dibuat.
+- **Status implementasi:** RPC `lms_grade_attempt` dan pemanggilan server dari store sudah dibuat; validasi staging S5 masih diperlukan.
+- **Masalah:** sebelumnya `gradeAttempt` menghitung `final_score` dan `passed` di browser lalu menulisnya langsung ke `lms_attempts`.
 - **Target:** migrasi baru dengan `lms_grade_attempt(p_attempt_id text, p_manual_scores jsonb)` (SECURITY DEFINER): validasi attempt berstatus "Menunggu Penilaian"; batasi nilai manual per soal <= `points`; hitung `manual_score`, `final_score` (skala 0-100), `passed` dari `pass_grade` tes; set status "Dinilai"; panggil `lms_create_draft_evaluation` bila memenuhi syarat; kembalikan `{final_score, passed}`.
 - **Langkah:** tulis migrasi; ganti isi `gradeAttempt` menjadi satu panggilan RPC; hapus perhitungan klien dan pembacaan `lms_questions` dari fungsi itu; perbarui `AdminPenilaian.vue` bila bentuk hasil berubah.
-- **Selesai bila:** skenario S5 lulus; tidak ada lagi `updateAttempt` yang menulis skor; `npm run build` lulus.
+- **Selesai bila:** skenario S5 lulus di staging; tidak ada lagi `updateAttempt` yang menulis skor; `npm run build` lulus. Status belum terverifikasi sampai S5 staging dijalankan.
 
 ### P0-2 Penilaian workshop via RPC + kunci kolom sementara
 - **Masalah:** `AdminPenilaian.vue` memanggil `workshopStore.updateSubmission` yang menulis skor langsung ke `lms_submissions` (hak anon penuh).

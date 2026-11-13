@@ -32,9 +32,10 @@ Kolom tambahan dari LMS:
 | `lms_start_attempt(p_test_id, p_session_id, p_auditor_id)` | validasi enrollment, jendela waktu, `max_attempts`; buat attempt |
 | `lms_get_test_questions(p_attempt_id)` | soal tanpa kunci, diacak sesuai pengaturan |
 | `lms_submit_attempt(p_attempt_id, p_answers)` | nilai otomatis PG/BS/Isian; esai -> Menunggu Penilaian |
+| `lms_grade_attempt(p_attempt_id text, p_manual_scores jsonb)` | validasi dan nilai esai/kasus di server; menyimpan skor final dan status Dinilai; membuat draft evaluasi bila lulus |
 | `lms_create_draft_evaluation(p_session_id, p_auditor_id)` | buat/timpa draft evaluasi (hanya bila masih Draft); tidak menulis `competency_cells` |
 
-**Belum ada:** `lms_grade_attempt(p_attempt_id, p_manual_scores)` untuk menilai esai di server (P0-1).
+`lms_grade_attempt` menerima objek JSON `{ "<question_id>": <numeric_score> }`. Setiap ID harus merupakan soal Esai/Kasus pada tes attempt tersebut; nilai harus berada di antara 0 dan `points`. Fungsi mengembalikan `{final_score, passed, manual_score}`, menghitung `final_score` pada skala 0–100 dari `auto_score + manual_score` dibagi total poin semua soal, dan memakai `lms_tests.pass_grade` tanpa default pengganti. Attempt harus berstatus `Menunggu Penilaian`; row lock mencegah penilaian ganda. Bila lulus, fungsi memanggil `lms_create_draft_evaluation` dalam transaksi yang sama. Eksekusi dicabut dari PUBLIC dan sementara diberikan ke `anon` serta `authenticated` sampai P1-1 menerapkan autentikasi dan otorisasi peran.
 
 ## Keadaan RLS saat ini
 Semua tabel (lama dan LMS) memakai policy `TO anon, authenticated USING (true)` untuk select/insert/update/delete, kecuali `lms_question_keys` (tanpa policy). Artinya siapa pun yang memegang anon key dapat membaca dan mengubah hampir semua data, termasuk `lms_attempts.final_score` dan `training_evaluations.hasil_tes_tertulis`. Rencana perbaikan ada di `SECURITY.md`.
